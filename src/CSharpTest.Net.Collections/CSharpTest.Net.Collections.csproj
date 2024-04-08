@@ -19,10 +19,10 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/umbraco/CSharpTest.Net.Collections</RepositoryUrl>
     <PackageTags>BPlusTree, BTreeDictionary, BTreeList, LurchTable, MergeSort, OrderedEnumeration, OrdinalList</PackageTags>
-    <PackageReleaseNotes>Breaking change to support block lize > 4096.</PackageReleaseNotes>
-    <AssemblyVersion>15.0.0</AssemblyVersion>
-    <FileVersion>15.0.0</FileVersion>
-    <Version>15.0.0</Version>
+    <PackageReleaseNotes>Breaking change to support block lize &gt; 4096.</PackageReleaseNotes>
+    <AssemblyVersion>16.0.0</AssemblyVersion>
+    <FileVersion>16.0.0</FileVersion>
+    <Version>16.0.0</Version>
     <PackageId>Umbraco.CSharpTest.Net.Collections</PackageId>
     <Authors>Roger Knapp, Bjarke Berg</Authors>
   </PropertyGroup>
@@ -46,5 +46,8 @@
   <ItemGroup>
     <EmbeddedResource Include="LICENSE-2.0.txt" />
     <Content Include="README.htm" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
   </ItemGroup>
 </Project>

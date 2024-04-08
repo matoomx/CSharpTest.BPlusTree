@@ -20,6 +20,7 @@ using CSharpTest.Net.Collections;
 using CSharpTest.Net.Serialization;
 using CSharpTest.Net.Interfaces;
 using System.Threading;
+using Microsoft.IO;
 
 #pragma warning disable 1591
 
@@ -33,6 +34,7 @@ namespace CSharpTest.Net.Storage
         private TransactedCompoundFile _file;
         private readonly FileId _rootId;
         private readonly TransactedCompoundFile.Options _options;
+        private static readonly RecyclableMemoryStreamManager _recyclableMemoryStreamManager = new RecyclableMemoryStreamManager();
 
         /// <summary>
         /// Opens an existing BPlusTree file at the path specified, for a new file use CreateNew()
@@ -118,7 +120,7 @@ namespace CSharpTest.Net.Storage
         {
             Check.Assert<InvalidNodeHandleException>(handleIn is FileId);
             FileId handle = (FileId)handleIn;
-            using (MemoryStream s = new MemoryStream())
+            using (var s = _recyclableMemoryStreamManager.GetStream())
             {
                 serializer.WriteTo(node, s);
                 _file.Write(handle.Id, s.GetBuffer(), 0, (int)s.Position);
