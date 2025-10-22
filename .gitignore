@@ -1,4 +1,3 @@
-_ReSharper.*
 obj
 bin
 Bin
@@ -23,6 +22,4 @@ Release
 packages/*/*
 depend/*
 .vs/
-src/CSharpTest.Net.Collections/Backup/
-src/CSharpTest.Net.BPlusTreeTest/Backup/
-src/CSharpTest.Net.CollectionsTest/Backup/
+

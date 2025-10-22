@@ -7,66 +7,51 @@ CSharpTest.Net.Collections (moved from https://code.google.com/p/csharptest-net/
 
 2014-09-06	Initial clone and extraction from existing library.
 
+2025-10-22  Fork to reintegrate offline BPlusTree modifications. This will not be compatible with exixting data files and use a new storage based upon the v2 format, some of the changes...
+Use .net 9.
+Remove all non BPulsTree relevant code.
+Change Serialization interface to use IBufferWriter and ReadOnlySequence.
+Use BinaryPrimitives in primitive serializer.
+Use RandomAccess for file io.
+Use a single test project based on MSTest since im used to that.
+Code restructure (I went too far but had to try to find what was really needed).
+Remove RecycableMemoryStream and use rented buffers instead.
+Use System.IO.Hashing for vectorized CRC checks.
+Use a single namespace CSharpTest.Collections.Generic so it's easier for clients.
+More statics so that generic types can be inferred.  
+
 ## Online Help ##
 
 BPlusTree Help: http://help.csharptest.net/?CSharpTest.Net.BPlusTree~CSharpTest.Net.Collections.BPlusTree%602.html
 
 ## Quick start ##
 
-### LurchTable Example ###
-```
-//Example producer/consumer queue where producer threads help when queue is full
-using (var queue = new LurchTable<string, int>(LurchTableOrder.Insertion, 100))
-{
-    var stop = new ManualResetEvent(false);
-    queue.ItemRemoved += kv => Console.WriteLine("[{0}] - {1}", Thread.CurrentThread.ManagedThreadId, kv.Key);
-    //start some threads eating queue:
-    var thread = new Thread(() => { while (!stop.WaitOne(0)) queue.Dequeue(); })
-        { Name = "worker", IsBackground = true };
-    thread.Start();
-
-    var names = Directory.GetFiles(Path.GetTempPath(), "*", SearchOption.AllDirectories);
-    if (names.Length <= 100) throw new Exception("Not enough trash in your temp dir.");
-    var loops = Math.Max(1, 10000/names.Length);
-    for(int i=0; i < loops; i++)
-        foreach (var name in names)
-            queue[name] = i;
-
-    stop.Set();
-    thread.Join();
-}
-```
 
 ### BPlusTree Example ###
 ```
-var options = new BPlusTree<string, DateTime>.OptionsV2(PrimitiveSerializer.String, PrimitiveSerializer.DateTime);
+var options = BPlusTree.CreateOptions(PrimitiveSerializer.String, PrimitiveSerializer.DateTime);	
 options.CalcBTreeOrder(16, 24);
 options.CreateFile = CreatePolicy.Always;
 options.FileName = Path.GetTempFileName();
-using (var tree = new BPlusTree<string, DateTime>(options))
+using (var tree = BPlusTree.Create(options))
 {
     var tempDir = new DirectoryInfo(Path.GetTempPath());
     foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
-    {
         tree.Add(file.FullName, file.LastWriteTimeUtc);
-    }
 }
 options.CreateFile = CreatePolicy.Never;
-using (var tree = new BPlusTree<string, DateTime>(options))
+using (var tree = BPlusTree.Create(options))
 {
     var tempDir = new DirectoryInfo(Path.GetTempPath());
     foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
     {
-        DateTime cmpDate;
-        if (!tree.TryGetValue(file.FullName, out cmpDate))
+        if (!tree.TryGetValue(file.FullName, out DateTime cmpDate))
             Console.WriteLine("New file: {0}", file.FullName);
         else if (cmpDate != file.LastWriteTimeUtc)
             Console.WriteLine("Modified: {0}", file.FullName);
         tree.Remove(file.FullName);
     }
     foreach (var item in tree)
-    {
         Console.WriteLine("Removed: {0}", item.Key);
-    }
 }
 ```

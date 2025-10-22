@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Tests/BPlusTreeTests.csproj" />
+  <Project Path="src/CSharpTest.BPlusTree/CSharpTest.BPlusTree.csproj" />
+</Solution>
