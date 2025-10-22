@@ -8,17 +8,17 @@ CSharpTest.Net.Collections (moved from https://code.google.com/p/csharptest-net/
 2014-09-06	Initial clone and extraction from existing library.
 
 2025-10-22	Fork to reintegrate offline BPlusTree modifications. This will not be compatible with existing data files and use a new storage based upon the v2 format. Some of the changes...
-Use .net 9.
-Remove all non BPulsTree relevant code.
-Change Serialization interface to use IBufferWriter and ReadOnlySequence.
-Use BinaryPrimitives in primitive serializer.
-Use RandomAccess for file io.
-Use a single test project based on MSTest since im used to that.
-Code restructure (I went too far but had to try to find what was really needed).
-Remove RecycableMemoryStream and use rented buffers instead.
-Use System.IO.Hashing for vectorized CRC checks.
-Use a single namespace CSharpTest.Collections.Generic so it's easier for clients.
-More statics so that generic types can be inferred.  
+* Use .net 9.
+* Remove all non BPulsTree relevant code.
+* Change Serialization interface to use IBufferWriter and ReadOnlySequence.
+* Use BinaryPrimitives in primitive serializer.
+* Use RandomAccess for file io.
+* Use a single test project based on MSTest since im used to that.
+* Code restructure (I went too far but had to try to find what was really needed).
+* Remove RecycableMemoryStream and use rented buffers instead.
+* Use System.IO.Hashing for vectorized CRC checks.
+* Use a single namespace CSharpTest.Collections.Generic so it's easier for clients.
+* More statics so that generic types can be inferred.  
 
 ## Online Help ##
 
