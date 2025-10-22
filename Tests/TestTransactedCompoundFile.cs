@@ -337,7 +337,7 @@ public class TestTransactedCompoundFile
 				file.Write(hid, sample, i, 300);
 			}
 			file.Commit();
-#warning is it ok that size is increased here?
+			//TODO verify that it is it ok that size is increased here
 			//Assert.AreEqual(size, temp.Info.Length);
 
 			file.Create();

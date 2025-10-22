@@ -13,37 +13,6 @@ namespace BPlusTreeTests;
 [TestClass]
 public sealed class ReloadTests
 {
-
-    [TestMethod]
-    public void TestReadme()
-    {
-        var options = BPlusTree.CreateOptions(PrimitiveSerializer.String, PrimitiveSerializer.DateTime);	
-        options.CalcBTreeOrder(16, 24);
-        options.CreateFile = CreatePolicy.Always;
-        options.FileName = Path.GetTempFileName();
-        using (var tree = BPlusTree.Create(options))
-        {
-            var tempDir = new DirectoryInfo(Path.GetTempPath());
-            foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
-                tree.Add(file.FullName, file.LastWriteTimeUtc);
-        }
-        options.CreateFile = CreatePolicy.Never;
-        using (var tree = BPlusTree.Create(options))
-        {
-            var tempDir = new DirectoryInfo(Path.GetTempPath());
-            foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
-            {
-                if (!tree.TryGetValue(file.FullName, out DateTime cmpDate))
-                    Console.WriteLine("New file: {0}", file.FullName);
-                else if (cmpDate != file.LastWriteTimeUtc)
-                    Console.WriteLine("Modified: {0}", file.FullName);
-                tree.Remove(file.FullName);
-            }
-            foreach (var item in tree)
-                Console.WriteLine("Removed: {0}", item.Key);
-        }
-    }
-
     [TestMethod]
     public void BasicTest()
     {

@@ -12,9 +12,11 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using CSharpTest.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -117,7 +119,11 @@ public class BasicFileTests : BasicTests
     {
 		using var tree = BPlusTree.Create(Options);
 		Assert.IsTrue(tree.TryAdd(1, "hi"));
-		Assert.Throws<IOException>(() => TempFile.Delete());
+		
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    		Assert.Throws<IOException>(() => TempFile.Delete());
+        else
+            TempFile.Delete(); //On linux file isn't locked
 	}
 
     [TestMethod]
