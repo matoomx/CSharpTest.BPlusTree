@@ -7,7 +7,7 @@ CSharpTest.Net.Collections (moved from https://code.google.com/p/csharptest-net/
 
 2014-09-06	Initial clone and extraction from existing library.
 
-2025-10-22  Fork to reintegrate offline BPlusTree modifications. This will not be compatible with exixting data files and use a new storage based upon the v2 format, some of the changes...
+2025-10-22	Fork to reintegrate offline BPlusTree modifications. This will not be compatible with existing data files and use a new storage based upon the v2 format. Some of the changes...
 Use .net 9.
 Remove all non BPulsTree relevant code.
 Change Serialization interface to use IBufferWriter and ReadOnlySequence.
