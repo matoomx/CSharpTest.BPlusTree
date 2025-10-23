@@ -301,12 +301,18 @@ public sealed class PrimitiveSerializer :
 
     void ISerializer<double>.WriteTo(double value, IBufferWriter<byte> stream)
     {
-        ((ISerializer<long>)this).WriteTo(BitConverter.DoubleToInt64Bits(value), stream);
+        BinaryPrimitives.WriteDoubleLittleEndian(stream.GetSpan(8), value); 
+        stream.Advance(8);
     }
 
     double ISerializer<double>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
     {
-        return BitConverter.Int64BitsToDouble(((ISerializer<long>)this).ReadFrom(stream, ref position));
+		Span<byte> buffer = stackalloc byte[8];
+
+		if (!stream.TryRead(ref position, buffer))
+			throw new InvalidDataException("Not enough data to read a UInt64");
+
+		return BinaryPrimitives.ReadDoubleLittleEndian(buffer);
     }
 
     #endregion
@@ -314,20 +320,28 @@ public sealed class PrimitiveSerializer :
 
     void ISerializer<float>.WriteTo(float value, IBufferWriter<byte> stream)
     {
-        ((ISerializer<long>)this).WriteTo(BitConverter.DoubleToInt64Bits(value), stream);
+		BinaryPrimitives.WriteSingleLittleEndian(stream.GetSpan(4), value);
+        stream.Advance(4);
     }
 
     float ISerializer<float>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
     {
-        return unchecked((float)BitConverter.Int64BitsToDouble(((ISerializer<long>)this).ReadFrom(stream, ref position)));
-    }
+		Span<byte> buffer = stackalloc byte[4];
 
-    #endregion
-    #region ISerializer<Guid> Members
+		if (!stream.TryRead(ref position, buffer))
+			throw new InvalidDataException("Not enough data to read a UInt64");
+		
+        return BinaryPrimitives.ReadSingleLittleEndian(buffer);
+	}
 
-    void ISerializer<Guid>.WriteTo(Guid value, IBufferWriter<byte> stream)
+	#endregion
+	#region ISerializer<Guid> Members
+
+	void ISerializer<Guid>.WriteTo(Guid value, IBufferWriter<byte> stream)
     {
-        stream.Write(value.ToByteArray());
+		Span<byte> buffer = stackalloc byte[16];
+        value.TryWriteBytes(buffer);
+		stream.Write(buffer);
     }
 
     Guid ISerializer<Guid>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
