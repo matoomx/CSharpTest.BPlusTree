@@ -226,10 +226,10 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
 						if ((byte)(temp >> 24) != 0xee || (temp & 0x00FFFFFF) != size)
 							break;
 
-						entry.TransactionId = BinaryPrimitives.ReadInt32BigEndian(span);
+						entry.TransactionId = BinaryPrimitives.ReadInt32LittleEndian(span);
 						_transactionId = Math.Max(_transactionId, entry.TransactionId + 1);
 
-						opCount = BinaryPrimitives.ReadInt16BigEndian(span.Slice(4));
+						opCount = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(4));
 						if (opCount <= 0 || opCount >= short.MaxValue)
 							break;
 					}
@@ -371,13 +371,13 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
         var suffix = buffer.GetSpan(8); //Get 8 bytes for Lenght and Crc at end of strem
 		var first = buffer.GetFirstBlock().Span;
 
-        BinaryPrimitives.WriteInt16BigEndian(first.Slice(8, 2), token.OperationCount); 
-		BinaryPrimitives.WriteUInt32BigEndian(suffix, buffer.CalculateCrc32(4));
+        BinaryPrimitives.WriteInt16LittleEndian(first.Slice(8, 2), token.OperationCount); 
+		BinaryPrimitives.WriteUInt32LittleEndian(suffix, buffer.CalculateCrc32(4));
         buffer.Advance(4);
 		int len = (int)buffer.Position;
-		BinaryPrimitives.WriteInt32BigEndian(suffix.Slice(4, 4), (0xee << 24) + len);
+		BinaryPrimitives.WriteInt32LittleEndian(suffix.Slice(4, 4), (0xee << 24) + len);
 		buffer.Advance(4);
-		BinaryPrimitives.WriteInt32BigEndian(first.Slice(0, 4), (0xbb << 24) + len);
+		BinaryPrimitives.WriteInt32LittleEndian(first.Slice(0, 4), (0xbb << 24) + len);
 
 		if (buffer.IsSingleBlock)
 			WriteBytes(buffer.GetFirstBlock().Span);
@@ -432,13 +432,13 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
     {
 		Span<byte> buffer = stackalloc byte[4];
 		stream.ReadExactly(buffer);
-		return BinaryPrimitives.ReadUInt32BigEndian(buffer);
+		return BinaryPrimitives.ReadUInt32LittleEndian(buffer);
 	}
 
 	private static int ReadIntFromStream(FileStream stream)
 	{
 		Span<byte> buffer = stackalloc byte[4];
 		stream.ReadExactly(buffer);
-		return BinaryPrimitives.ReadInt32BigEndian(buffer);
+		return BinaryPrimitives.ReadInt32LittleEndian(buffer);
 	}
 }

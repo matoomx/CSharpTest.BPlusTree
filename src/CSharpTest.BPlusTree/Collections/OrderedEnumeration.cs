@@ -145,7 +145,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
                         buffer.Advance(4);
                         var pos = buffer.Position;
 						_serializer.WriteTo(i, buffer);
-                        BinaryPrimitives.WriteInt32BigEndian(sizeHeader,(int)(buffer.Position - pos));
+                        BinaryPrimitives.WriteInt32LittleEndian(sizeHeader,(int)(buffer.Position - pos));
 
                         if (buffer.Position >= 4096)
                         {

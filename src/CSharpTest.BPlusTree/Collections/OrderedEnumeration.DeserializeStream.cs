@@ -46,7 +46,7 @@ public partial class OrderedEnumeration<T>
 
 			Span<byte> sizeBuffer = stackalloc byte[4];
 			_data.Slice(_position, 4).CopyTo(sizeBuffer);
-			int messageSize = BinaryPrimitives.ReadInt32BigEndian(sizeBuffer);
+			int messageSize = BinaryPrimitives.ReadInt32LittleEndian(sizeBuffer);
 			_position += HeaderSize;
 
 			if (messageSize < 0)

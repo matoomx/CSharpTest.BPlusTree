@@ -111,10 +111,10 @@ public sealed partial class TransactedCompoundFile
             var span = source.GetFirstBlock().Span;
 			//Write the header
 			span[OffsetOfHeaderSize] = BlockHeaderSize;
-			BinaryPrimitives.WriteUInt32BigEndian(span.Slice(OffsetOfLength), (uint)(int)source.Position - BlockHeaderSize);
-			BinaryPrimitives.WriteUInt32BigEndian(span.Slice(OffsetOfCrc32), source.CalculateCrc32(BlockHeaderSize));
-			BinaryPrimitives.WriteUInt32BigEndian(span.Slice(OffsetOfBlockCount), (uint)block.ActualBlocks);
-			BinaryPrimitives.WriteUInt32BigEndian(span.Slice(OffsetOfBlockId), block.Identity);
+			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfLength), (uint)(int)source.Position - BlockHeaderSize);
+			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfCrc32), source.CalculateCrc32(BlockHeaderSize));
+			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfBlockCount), (uint)block.ActualBlocks);
+			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfBlockId), block.Identity);
 			fputs(_sectionPosition + (BlockSize * block.Offset), source);
 		}
 
@@ -139,9 +139,9 @@ public sealed partial class TransactedCompoundFile
                 }
 
                 headerSize = bytes[OffsetOfHeaderSize];
-                length = (int)BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(OffsetOfLength));
-                block.ActualBlocks = (int)BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(OffsetOfBlockCount));
-                uint blockId = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(OffsetOfBlockId));
+                length = (int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(OffsetOfLength));
+                block.ActualBlocks = (int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(OffsetOfBlockCount));
+                uint blockId = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(OffsetOfBlockId));
 
                 if(headerSize < BlockHeaderSize)
                 {
@@ -198,7 +198,7 @@ public sealed partial class TransactedCompoundFile
 
             var crc = System.IO.Hashing.Crc32.HashToUInt32(bytes.AsSpan(headerSize, length));
 
-            if (crc != BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(OffsetOfCrc32)))
+            if (crc != BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(OffsetOfCrc32)))
             {
                 _bytePool.Return(bytes);
                 throw new InvalidDataException();
@@ -230,7 +230,7 @@ public sealed partial class TransactedCompoundFile
                         byte[] header = new byte[BlockHeaderSize];
                         if (BlockHeaderSize != fget(position, header, header.Length))
                             throw new InvalidDataException();
-                        block.ActualBlocks = (int)BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(OffsetOfBlockCount));
+                        block.ActualBlocks = (int)BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(OffsetOfBlockCount));
                     }
 
                     for (uint i = 0; i < block.ActualBlocks; i++)
@@ -254,7 +254,7 @@ public sealed partial class TransactedCompoundFile
             int offset = ordinal << 2;
             int start = _baseOffset + offset;
             lock (_blockData)
-                return BinaryPrimitives.ReadUInt32BigEndian(_blockData.AsSpan(start));
+                return BinaryPrimitives.ReadUInt32LittleEndian(_blockData.AsSpan(start));
         }
 
         private void WriteUInt32(int ordinal, uint value)
@@ -262,15 +262,15 @@ public sealed partial class TransactedCompoundFile
             int offset = ordinal << 2;
             int start = _baseOffset + offset;
             lock(_blockData)
-                BinaryPrimitives.WriteUInt32BigEndian(_blockData.AsSpan(start), value);
+                BinaryPrimitives.WriteUInt32LittleEndian(_blockData.AsSpan(start), value);
 		}
 
         private void MakeValid()
         {
             uint crc = CalcCrc32();
             var span = _blockData.AsSpan();
-            BinaryPrimitives.WriteUInt32BigEndian(span, crc);
-			BinaryPrimitives.WriteUInt32BigEndian(span.Slice(_blockData.Length - 4), crc);
+            BinaryPrimitives.WriteUInt32LittleEndian(span, crc);
+			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(_blockData.Length - 4), crc);
         }
 
         private uint CalcCrc32()
@@ -281,8 +281,8 @@ public sealed partial class TransactedCompoundFile
         private bool CheckValid()
         {
 			var span = _blockData.AsSpan();
-			uint crc1 = BinaryPrimitives.ReadUInt32BigEndian(span);
-            uint crc2 = BinaryPrimitives.ReadUInt32BigEndian(span.Slice(_blockData.Length - 4));
+			uint crc1 = BinaryPrimitives.ReadUInt32LittleEndian(span);
+            uint crc2 = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(_blockData.Length - 4));
             return crc1 == crc2 && crc1 == CalcCrc32();
         }
     }

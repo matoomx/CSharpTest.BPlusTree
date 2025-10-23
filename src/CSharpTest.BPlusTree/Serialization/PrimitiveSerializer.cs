@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Text;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -46,10 +47,12 @@ public sealed class PrimitiveSerializer :
 {
     /// <summary> Gets a singleton of the PrimitiveSerializer </summary>
     public static readonly PrimitiveSerializer Instance = new PrimitiveSerializer();
-    /// <summary> Gets a typed version of the PrimitiveSerializer</summary>
+    /// <summary> Gets a typed version of the PrimitiveSerializer that uses Utf8</summary>
     public static readonly ISerializer<string> String = Instance;
-    /// <summary> Gets a typed version of the PrimitiveSerializer </summary>
-    public static readonly ISerializer<bool> Boolean = Instance;
+	/// <summary> Gets a typed version of the PrimitiveSerializer that uses Utf16</summary>
+	public static readonly ISerializer<string> StringUtf16 = new PrimitiveUtf16Serializer();
+	/// <summary> Gets a typed version of the PrimitiveSerializer </summary>
+	public static readonly ISerializer<bool> Boolean = Instance;
     /// <summary> Gets a typed version of the PrimitiveSerializer </summary>
     public static readonly ISerializer<byte> Byte = Instance;
     /// <summary> Gets a typed version of the PrimitiveSerializer </summary>
@@ -84,7 +87,6 @@ public sealed class PrimitiveSerializer :
     public static readonly ISerializer<IntPtr> IntPtr = Instance;
     /// <summary> Gets a typed version of the PrimitiveSerializer </summary>
     public static readonly ISerializer<UIntPtr> UIntPtr = Instance;
-
 
     #region ISerializer<bool> Members
 
@@ -210,7 +212,7 @@ public sealed class PrimitiveSerializer :
 
 	void ISerializer<ushort>.WriteTo(ushort value, IBufferWriter<byte> stream)
     {
-        BinaryPrimitives.WriteUInt16BigEndian(stream.GetSpan(2), value);
+        BinaryPrimitives.WriteUInt16LittleEndian(stream.GetSpan(2), value);
         stream.Advance(2);
 	}
 
@@ -221,7 +223,7 @@ public sealed class PrimitiveSerializer :
         if (!stream.TryRead(ref position, b))
             throw new InvalidDataException("Not enough data to read a UInt16");
 
-		return BinaryPrimitives.ReadUInt16BigEndian(b);
+		return BinaryPrimitives.ReadUInt16LittleEndian(b);
     }
 
     #endregion
@@ -229,20 +231,26 @@ public sealed class PrimitiveSerializer :
 
     void ISerializer<int>.WriteTo(int value, IBufferWriter<byte> stream)
     {
-        ((ISerializer<uint>)this).WriteTo(unchecked((uint)value), stream);
-    }
+		BinaryPrimitives.WriteInt32LittleEndian(stream.GetSpan(4), value);
+		stream.Advance(4);
+	}
 
     int ISerializer<int>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
     {
-        return unchecked((int)((ISerializer<uint>)this).ReadFrom(stream, ref position));
-    }
+		Span<byte> buffer = stackalloc byte[4];
+
+		if (!stream.TryRead(ref position, buffer))
+			throw new InvalidDataException("Not enough data to read a Int32");
+
+		return BinaryPrimitives.ReadInt32LittleEndian(buffer);
+	}
 
     #endregion
     #region ISerializer<uint> Members
 
     void ISerializer<uint>.WriteTo(uint value, IBufferWriter<byte> stream)
     {
-        BinaryPrimitives.WriteUInt32BigEndian(stream.GetSpan(4), value);
+        BinaryPrimitives.WriteUInt32LittleEndian(stream.GetSpan(4), value);
         stream.Advance(4);
     }
 
@@ -253,7 +261,7 @@ public sealed class PrimitiveSerializer :
         if (!stream.TryRead(ref position, buffer))
             throw new InvalidDataException("Not enough data to read a UInt32");
 
-        return BinaryPrimitives.ReadUInt32BigEndian(buffer);
+        return BinaryPrimitives.ReadUInt32LittleEndian(buffer);
     }
 
 	#endregion
@@ -274,7 +282,7 @@ public sealed class PrimitiveSerializer :
 
     void ISerializer<ulong>.WriteTo(ulong value, IBufferWriter<byte> stream)
     {
-        BinaryPrimitives.WriteUInt64BigEndian(stream.GetSpan(8), value);
+        BinaryPrimitives.WriteUInt64LittleEndian(stream.GetSpan(8), value);
         stream.Advance(8);
     }
 
@@ -285,7 +293,7 @@ public sealed class PrimitiveSerializer :
         if (!stream.TryRead(ref position, buffer))
             throw new InvalidDataException("Not enough data to read a UInt64");
 
-        return BinaryPrimitives.ReadUInt64BigEndian(buffer);
+        return BinaryPrimitives.ReadUInt64LittleEndian(buffer);
     }
 
     #endregion
@@ -359,7 +367,7 @@ public sealed class PrimitiveSerializer :
     }
 
 	#endregion
-
+	#region ISerializer<string> Members
 	void ISerializer<string>.WriteTo(string value, IBufferWriter<byte> stream)
 	{
 		if (value == null)
@@ -368,11 +376,25 @@ public sealed class PrimitiveSerializer :
 		}
 		else
 		{
-            var bytes = MemoryMarshal.Cast<char, byte>(value);
-            var target = stream.GetSpan(bytes.Length + 4);
-            BinaryPrimitives.WriteInt32BigEndian(target, value.Length);
-            bytes.CopyTo(target.Slice(4));
-            stream.Advance(bytes.Length + 4);
+			var buffer = ArrayPool<byte>.Shared.Rent(value.Length *2);
+            try
+            {
+                if (!UTF8Encoding.UTF8.TryGetBytes(value, buffer, out var written))
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = ArrayPool<byte>.Shared.Rent(written);
+                    UTF8Encoding.UTF8.TryGetBytes(value, buffer, out written);
+                }
+
+                var target = stream.GetSpan(written + 4);
+                BinaryPrimitives.WriteInt32LittleEndian(target, written);
+				buffer.AsSpan(0, written).CopyTo(target.Slice(4));
+                stream.Advance(written + 4);
+            }
+            finally 
+            {
+				ArrayPool<byte>.Shared.Return(buffer);
+			}
 		}
 	}
 
@@ -383,15 +405,20 @@ public sealed class PrimitiveSerializer :
 		if (sz == int.MinValue)
 			return null;
 
-        var res = string.Create(sz, (stream, position), (span, state) =>
+        var buffer = ArrayPool<byte>.Shared.Rent(sz);
+
+        try
         {
-            var buffer = MemoryMarshal.Cast<char, byte>(span);
-            if (!state.stream.TryRead(ref state.position, buffer))
+            var bytes = buffer.AsSpan(0, sz);
+            if (!stream.TryRead(ref position, bytes))
                 throw new InvalidDataException("Not enough data to read a String");
-		});
 
-        position = stream.GetPosition(sz*2, position);
-
-		return res;
-	}
+            return UTF8Encoding.UTF8.GetString(bytes);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+	#endregion
 }
