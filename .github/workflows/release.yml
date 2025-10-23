@@ -25,14 +25,7 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-    #- name: Archive Release
-      #uses: thedoctor0/zip-release@0.7.6
-      #with:
-      #  type: 'zip'
-      #  filename: 'release.zip'
-      #  exclusions: '*.git*'      
     - name: Upload Release
       uses: ncipollo/release-action@v1.20.0    
       with:
-        #artifacts: "release.zip"
         token: ${{ secrets.GITHUB_TOKEN }}
