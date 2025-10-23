@@ -33,7 +33,7 @@ public class ThreadedBTreeTest
     public virtual void Setup()
     {
         TempFile = new TempFile();
-        ClearRecords();
+		ClearRecords();
 	}
 
     [TestCleanup]
@@ -42,7 +42,7 @@ public class ThreadedBTreeTest
         TempFile.Dispose();
     }
 
-    public void ClearRecords()
+    public static void ClearRecords()
     { 
         RecordsCreated = 0; 
     }
@@ -333,7 +333,7 @@ public class ThreadedBTreeTest
             finally
             {
                 time.Stop();
-                Trace.TraceInformation("thread {0,3} complete ({1}c/{2}r/{3}w/{4}d) in {5:n0}ms", Thread.CurrentThread.ManagedThreadId, create, read, write, delete, time.ElapsedMilliseconds);
+                Trace.TraceInformation("thread {0,3} complete ({1}c/{2}r/{3}w/{4}d) in {5:n0}ms", Environment.CurrentManagedThreadId, create, read, write, delete, time.ElapsedMilliseconds);
             }
         }
     }

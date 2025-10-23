@@ -192,7 +192,7 @@ partial class BPlusTree<TKey, TValue>
         try
         {
             int counter = 0;
-            using (RootLock root = LockRoot(LockType.Insert, "Merge", false))
+            using (RootLock root = LockRoot(LockType.Insert, false))
             {
                 if (root.Pin.Ptr.Count != 1)
                     throw new InvalidDataException();

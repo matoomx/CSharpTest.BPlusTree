@@ -25,7 +25,9 @@ namespace BPlusTreeTests;
 [TestClass]
 public class ThreadedMassInsertTest
 {
-    static readonly ManualResetEvent mreStop = new ManualResetEvent(false);
+	public TestContext TestContext { get; set; }
+
+	static readonly ManualResetEvent mreStop = new ManualResetEvent(false);
 
     [TestMethod]
     public void TestConcurrency()
@@ -46,7 +48,7 @@ public class ThreadedMassInsertTest
 		};
 
 		foreach (var t in tests)
-			actions.Add(Task.Run(() => t(tree)));
+			actions.Add(Task.Run(() => t(tree), TestContext.CancellationToken));
 
 		do
 		{
@@ -106,7 +108,7 @@ public class ThreadedMassInsertTest
         }
     }
 
-    private void AddIdle(BPlusTree<Guid, TestInfo> tree)
+    private static void AddIdle(BPlusTree<Guid, TestInfo> tree)
     {
         int size = tree.Count;
         if (size > 100000)
@@ -119,7 +121,7 @@ public class ThreadedMassInsertTest
         {
             foreach(var pair in CreateData(100))
                 tree.Add(pair.Key, pair.Value);
-            AddIdle(tree);
+			AddIdle(tree);
         }
     }
 
@@ -128,7 +130,7 @@ public class ThreadedMassInsertTest
         while (!mreStop.WaitOne(0, false))
         {
             tree.AddRange(CreateData(100));
-            AddIdle(tree);
+			AddIdle(tree);
         }
     }
 
@@ -137,7 +139,7 @@ public class ThreadedMassInsertTest
         while (!mreStop.WaitOne(0, false))
         {
             tree.BulkInsert(CreateData(100));
-            AddIdle(tree);
+			AddIdle(tree);
             Thread.Sleep(100);
         }
     }

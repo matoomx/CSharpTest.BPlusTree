@@ -19,7 +19,7 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-    class NodeTransaction : IDisposable, ITransactable
+	sealed class NodeTransaction : IDisposable, ITransactable
     {
         readonly NodeCacheBase _cache;
         private NodePin _created, _deleted;

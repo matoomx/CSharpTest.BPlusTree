@@ -415,8 +415,11 @@ public sealed class PrimitiveSerializer :
 	string ISerializer<string>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
 	{
 		int sz = Int32.ReadFrom(stream, ref position);
-		if (sz == 0) return string.Empty;
-		if (sz == int.MinValue)
+		
+        if (sz == 0) 
+            return string.Empty;
+		
+        if (sz == int.MinValue)
 			return null;
 
         var buffer = ArrayPool<byte>.Shared.Rent(sz);

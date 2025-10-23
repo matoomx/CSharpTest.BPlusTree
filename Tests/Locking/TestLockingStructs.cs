@@ -46,7 +46,9 @@ public class TestLockingStructs
     public void TestYouCanDisposeReadLock()
     {
 		using ILockStrategy l = LockFactory.Create();
+#pragma warning disable CA1859 // simulate double dispose
 		using IDisposable r = ReadLock.Acquire(l, 0);
+#pragma warning restore CA1859 
 		r.Dispose();//since the using statement has the same boxed pointer to r, we are allowed to dispose
 	}
 
@@ -82,7 +84,9 @@ public class TestLockingStructs
     public void TestYouCanDisposeWriteLock()
     {
 		using ILockStrategy l = LockFactory.Create();
+#pragma warning disable CA1859 // Simulate using
 		using IDisposable w = l.Write();
+#pragma warning restore CA1859 
 		w.Dispose();//since the using statement has the same boxed pointer to w, we are allowed to dispose
 	}
 
@@ -115,29 +119,23 @@ public class TestLockingStructs
     [TestMethod]
     public void TestSafeLockTimeout()
     {
-        Assert.Throws<TimeoutException>(() =>
-        {
-            object instance = new object();
-            using (new ThreadedWriter(new SimpleReadWriteLocking(instance)))
-            using (new SafeLock(instance, 0))
-                Assert.Fail();
-        });
+		var instance = new object();
+        using var wx = new ThreadedWriter(new SimpleReadWriteLocking(instance));
+	    Assert.Throws<TimeoutException>(() => new SafeLock(instance, 0));
     }
 
     [TestMethod]
     public void TestSafeLockTimeoutWithTException()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-        {
-            object instance = new object();
-            using (new ThreadedWriter(new SimpleReadWriteLocking(instance)))
-            using (new SafeLock<ArgumentOutOfRangeException>(instance, 0))
-                Assert.Fail();
-        });
+		var instance = new object();
+        using var xw = new ThreadedWriter(new SimpleReadWriteLocking(instance));
+
+		Assert.Throws<ArgumentOutOfRangeException>(() => new SafeLock<ArgumentOutOfRangeException>(instance, 0));
     }
 
     [TestMethod]
-    public void TestYouCanDisposeSafeLock()
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "Testing dispose")]
+	public void TestYouCanDisposeSafeLock()
     {
         object instance = new object();
 		using IDisposable safeLock = new SafeLock(instance, 0);

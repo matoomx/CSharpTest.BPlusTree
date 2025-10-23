@@ -20,7 +20,7 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-	class NodeHandleSerializer : ISerializer<NodeHandle>, ISerializer<IStorageHandle>
+	sealed class NodeHandleSerializer : ISerializer<NodeHandle>, ISerializer<IStorageHandle>
     {
         private readonly ISerializer<IStorageHandle> _handleSerializer;
 

@@ -42,11 +42,11 @@ public class TestWeakReferenceT
         Assert.IsTrue(_destroyed);
 		Assert.IsFalse(r.IsAlive);
 		Assert.IsNull(r.Target);
-        Assert.IsFalse(r.TryGetTarget(out MyObject tmp));
+        Assert.IsFalse(r.TryGetTarget(out var _));
     }
 
 	[MethodImpl(MethodImplOptions.NoInlining)]
-	private CSharpTest.Collections.Generic.WeakReference<MyObject> CreateWeakRef()
+	private static CSharpTest.Collections.Generic.WeakReference<MyObject> CreateWeakRef()
     {
 		MyObject obj = new MyObject();
 

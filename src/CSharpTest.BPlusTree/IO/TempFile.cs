@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.IO;
 using System.Diagnostics;
@@ -32,18 +33,18 @@ public sealed class TempFile : IDisposable
     public static TempFile Attach(string existingPath)
     {
         return new TempFile(existingPath);
-		}
-		/// <summary>
-		/// Creates a temp file having the provided extension
-		/// </summary>
-		public static TempFile FromExtension(string extensionWithDot)
-		{
-			return new TempFile(CreateTempPath(extensionWithDot));
-		}
+	}
+	/// <summary>
+	/// Creates a temp file having the provided extension
+	/// </summary>
+	public static TempFile FromExtension(string extensionWithDot)
+	{
+		return new TempFile(CreateTempPath(extensionWithDot));
+	}
 	/// <summary>
     /// Creates a temp file having the provided extension
     /// </summary>
-		public static string CreateTempPath(string extensionWithDot)
+	public static string CreateTempPath(string extensionWithDot)
     {
         int attempt = 0;
         while (true)
@@ -51,24 +52,25 @@ public sealed class TempFile : IDisposable
             try
             {
                 string path = Path.GetTempFileName();
-					if (string.IsNullOrEmpty(extensionWithDot))
-					{
-						if (!File.Exists(path))
-							File.Open(path, FileMode.CreateNew).Dispose();
-						return path;
-					}
+				if (string.IsNullOrEmpty(extensionWithDot))
+				{
+					if (!File.Exists(path))
+						File.Open(path, FileMode.CreateNew).Dispose();
+					return path;
+				}
             	if (File.Exists(path))
                     File.Delete(path);
+
                 path = Path.ChangeExtension(path, extensionWithDot);
                 File.Open(path, FileMode.CreateNew).Dispose();
                 return path;
-				}
-				catch (UnauthorizedAccessException)
-				{
-					if (++attempt < 10)
-						continue;
-					throw;
-				}
+			}
+			catch (UnauthorizedAccessException)
+			{
+				if (++attempt < 10)
+					continue;
+				throw;
+			}
             catch (IOException)
             {
                 if (++attempt < 10)
@@ -121,10 +123,11 @@ public sealed class TempFile : IDisposable
         if (!string.IsNullOrEmpty(_filename = filename))
             _filename = Path.GetFullPath(_filename);
     }
-		/// <summary>
-		/// Removes the file if Dispose() is not called
-		/// </summary>
-		~TempFile() 
+
+	/// <summary>
+	/// Removes the file if Dispose() is not called
+	/// </summary>
+	~TempFile() 
     { 
         try 
         { 
@@ -140,20 +143,20 @@ public sealed class TempFile : IDisposable
     {
         get 
         {
-				return string.IsNullOrEmpty(_filename) ? throw new ObjectDisposedException(GetType().ToString()) : _filename;
-			}
+			return string.IsNullOrEmpty(_filename) ? throw new ObjectDisposedException(GetType().ToString()) : _filename;
+		}
     }
 		/// <summary> Disposes of the temporary file </summary>
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize. Supress is called in Dispose(bool) if file is acessible
-		public void Dispose()
-		{ 
+	public void Dispose()
+	{ 
         Dispose(true); 
     }
     
     /// <summary>
-		/// Disposes of the temporary file
-		/// </summary>
-		private void Dispose(bool disposing)
+	/// Disposes of the temporary file
+	/// </summary>
+	private void Dispose(bool disposing)
     {
         try
         {
@@ -175,22 +178,22 @@ public sealed class TempFile : IDisposable
         }
     }
 
-		/// <summary>
-		/// Detatches this instance from the temporary file and returns the temp file's path
-		/// </summary>
-		public string Detatch()
+	/// <summary>
+	/// Detatches this instance from the temporary file and returns the temp file's path
+	/// </summary>
+	public string Detatch()
     {
-			GC.SuppressFinalize(this);
-			string name = _filename;
+		GC.SuppressFinalize(this);
+		string name = _filename;
         _filename = null;
         return name;
     }
 #pragma warning restore CA1816
 
-		/// <summary>
-		/// Returns true if the current temp file exists.
-		/// </summary>
-		public bool Exists 
+	/// <summary>
+	/// Returns true if the current temp file exists.
+	/// </summary>
+	public bool Exists 
     { 
         get { return !string.IsNullOrEmpty(_filename) && File.Exists(_filename); }
     }
@@ -215,10 +218,6 @@ public sealed class TempFile : IDisposable
     public byte[] ReadAllBytes() { return File.ReadAllBytes(TempPath); }
     /// <summary> Writes all bytes to the file </summary>
     public void WriteAllBytes(byte[] data) { File.WriteAllBytes(TempPath, data); }
-    /// <summary> Reads all UTF8 text from the file </summary>
-    public string ReadAllText() { return File.ReadAllText(TempPath, Encoding.UTF8); }
-    /// <summary> Writes all UTF8 text to the file </summary>
-    public void WriteAllText(string content) { File.WriteAllText(TempPath, content, Encoding.UTF8); }
 
     /// <summary>
     /// Deletes the current temp file immediatly if it exists.

@@ -147,33 +147,24 @@ public abstract class BaseThreadedReaderWriterTest<TFactory> : BaseThreadedWrite
     [TestMethod]
     public void TestThreadedReadTimeout()
     {
-        Assert.Throws<TimeoutException>(() =>
-        {
-			using ILockStrategy l = LockFactory.Create();
-			using (new ThreadedWriter(l))
-			using (l.Read(0))
-			{ }
-		});
-        
+		using ILockStrategy l = LockFactory.Create();
+        using var wx = new ThreadedWriter(l);
+		
+        Assert.Throws<TimeoutException>(() => l.Read(0)); 
     }
 
     [TestMethod]
     public void TestExcessiveReleaseWrite()
     {
-        Assert.Throws<Exception>(() =>
-        {
-			using ILockStrategy l = LockFactory.Create();
-			l.ReleaseWrite();
-		});
+		using ILockStrategy l = LockFactory.Create();
+
+		Assert.Throws<Exception>(() => l.ReleaseWrite());
     }
 
     [TestMethod]
     public void TestExcessiveReleaseRead()
     {
-        Assert.Throws<Exception>(() =>
-        {
-			using ILockStrategy l = LockFactory.Create();
-			l.ReleaseRead();
-		});
+		using ILockStrategy l = LockFactory.Create();
+		Assert.Throws<Exception>(() => l.ReleaseRead());
     }
 }

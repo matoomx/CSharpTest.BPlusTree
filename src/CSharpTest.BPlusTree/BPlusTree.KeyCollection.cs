@@ -22,7 +22,7 @@ public sealed partial class BPlusTree<TKey, TValue>
 {
     private KeyCollection _keysCollection;
 
-    class KeyCollection : ICollection<TKey>
+	sealed class KeyCollection : ICollection<TKey>
     {
         private readonly IDictionary<TKey, TValue> _owner;
 

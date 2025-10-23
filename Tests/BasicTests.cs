@@ -657,7 +657,7 @@ public class BasicTests
 		}
     }
 
-    void RemoveRandomKeys(int count, Dictionary<int, string> keys, BPlusTree<int, string> data)
+	static void RemoveRandomKeys(int count, Dictionary<int, string> keys, BPlusTree<int, string> data)
     {
         Stopwatch time = new Stopwatch();
         time.Start();
@@ -696,7 +696,7 @@ public class BasicTests
         Trace.TraceInformation("Added {0} in {1}", count, time.ElapsedMilliseconds);
     }
 
-    void IsSameList(Dictionary<int, string> keys, BPlusTree<int, string> data)
+	static void IsSameList(Dictionary<int, string> keys, BPlusTree<int, string> data)
     {
         Stopwatch time = new Stopwatch();
         time.Start();

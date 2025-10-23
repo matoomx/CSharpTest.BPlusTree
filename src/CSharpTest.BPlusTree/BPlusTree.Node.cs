@@ -20,7 +20,7 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-    class Node
+	class Node
     {
         private readonly IStorageHandle _handle;
         protected readonly Element[] _list;

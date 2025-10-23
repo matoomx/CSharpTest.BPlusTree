@@ -24,7 +24,7 @@ namespace BPlusTreeTests;
 [TestClass]
 public class TestBulkInsert
 {
-    protected BPlusTree<int, string>.Options Options
+    protected static BPlusTree<int, string>.Options Options
     {
         get
         {
@@ -95,14 +95,14 @@ public class TestBulkInsert
     public void TestBulkInsertRandom()
     {
         for (int count = 0; count < 260; count++)
-            TestMergeRandom(Options, 1, count);
+			TestMergeRandom(Options, 1, count);
     }
 
     [TestMethod]
     public void TestMergeInsertRandom()
     {
         for (int count = 0; count < 260; count += 7)
-            TestMergeRandom(Options, 4, count);
+			TestMergeRandom(Options, 4, count);
     }
 
     [TestMethod]
@@ -165,7 +165,7 @@ public class TestBulkInsert
 		Trace.TraceInformation("Verified {0} nodes in {1}.", expected.Count, sw.Elapsed);
 	}
 
-    public Dictionary<int, string> TestMergeRandom(BPlusTree<int, string>.Options options, int nsets, int nsize)
+    public static Dictionary<int, string> TestMergeRandom(BPlusTree<int, string>.Options options, int nsets, int nsize)
     {
         var test = new Dictionary<int, string>();
         var sets = new List<IEnumerable<KeyValuePair<int, string>>>(CreateSets(nsets, nsize, test)).ToArray();

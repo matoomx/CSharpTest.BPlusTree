@@ -19,7 +19,7 @@ namespace CSharpTest.Collections.Generic;
 partial class BPlusTree<TKey, TValue>
 {
 	[System.Diagnostics.DebuggerDisplay("RootNode, Handle = {_handle}")]
-    class RootNode : Node
+	sealed class RootNode : Node
     {
         public RootNode(IStorageHandle handle) : base(handle, 1)
         { 

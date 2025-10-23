@@ -17,7 +17,7 @@ namespace CSharpTest.Collections.Generic;
 /// <summary>
 /// Options for bulk insertion
 /// </summary>
-public class BulkInsertOptions
+public sealed class BulkInsertOptions
 {
     private bool _inputIsSorted;
     private bool _commitOnCompletion;

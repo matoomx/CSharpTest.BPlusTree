@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Collections.Generic;
 using CSharpTest.Collections.Generic;
@@ -21,7 +22,7 @@ namespace BPlusTreeTests;
 /// <summary>
 /// Represents a thread-safe generic collection of key/value pairs.
 /// </summary>
-public class SynchronizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDisposable
+public sealed class SynchronizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IDisposable
 {
     private IDictionary<TKey, TValue> _store;
     private readonly ILockStrategy _lock;
@@ -29,32 +30,28 @@ public class SynchronizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, I
     /// <summary>
     /// Constructs a thread-safe generic collection of key/value pairs using exclusive locking.
     /// </summary>
-    public SynchronizedDictionary()
-        : this(new Dictionary<TKey, TValue>(), new ExclusiveLocking())
+    public SynchronizedDictionary() : this(new Dictionary<TKey, TValue>(), new ExclusiveLocking())
     {
     }
 
     /// <summary>
     /// Constructs a thread-safe generic collection of key/value pairs using exclusive locking.
     /// </summary>
-    public SynchronizedDictionary(IEqualityComparer<TKey> comparer)
-        : this(new Dictionary<TKey, TValue>(comparer), new ExclusiveLocking())
+    public SynchronizedDictionary(IEqualityComparer<TKey> comparer) : this(new Dictionary<TKey, TValue>(comparer), new ExclusiveLocking())
     {
     }
 
     /// <summary>
     /// Constructs a thread-safe generic collection of key/value pairs using the lock provided.
     /// </summary>
-    public SynchronizedDictionary(IEqualityComparer<TKey> comparer, ILockStrategy locking)
-        : this(new Dictionary<TKey, TValue>(comparer), locking)
+    public SynchronizedDictionary(IEqualityComparer<TKey> comparer, ILockStrategy locking) : this(new Dictionary<TKey, TValue>(comparer), locking)
     {
     }
 
     /// <summary>
     /// Constructs a thread-safe generic collection of key/value pairs using the lock provided.
     /// </summary>
-    public SynchronizedDictionary(ILockStrategy locking)
-        : this(new Dictionary<TKey, TValue>(), locking)
+    public SynchronizedDictionary(ILockStrategy locking) : this(new Dictionary<TKey, TValue>(), locking)
     {
     }
 
@@ -64,8 +61,7 @@ public class SynchronizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, I
     /// allow reader/writer locking provide one of those lock types from the Synchronization
     /// namespace.
     /// </summary>
-    public SynchronizedDictionary(IDictionary<TKey, TValue> storage)
-        : this(storage, new ExclusiveLocking())
+    public SynchronizedDictionary(IDictionary<TKey, TValue> storage) : this(storage, new ExclusiveLocking())
     {
     }
 
@@ -85,8 +81,8 @@ public class SynchronizedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, I
     {
         _lock.Dispose();
 
-        if (_store is IDisposable)
-            ((IDisposable) _store).Dispose();
+        if (_store is IDisposable d)
+            d.Dispose();
 
         _store = null;
     }

@@ -66,6 +66,13 @@ public sealed partial class BPlusTree<TKey, TValue>
         }
     }
 
-	RootLock LockRoot(LockType ltype, string methodName) { return new RootLock(this, ltype, false); }
-	RootLock LockRoot(LockType ltype, string methodName, bool exclusive) { return new RootLock(this, ltype, exclusive); }
+	RootLock LockRoot(LockType ltype) 
+    { 
+        return new RootLock(this, ltype, false); 
+    }
+
+	RootLock LockRoot(LockType ltype, bool exclusive) 
+    { 
+        return new RootLock(this, ltype, exclusive); 
+    }
 }

@@ -40,8 +40,7 @@ public sealed partial class TransactedCompoundFile
                 throw new ArgumentOutOfRangeException(nameof(block));
         }
 
-        public BlockRef(uint blockId, int blockSize, int actualBlocks)
-            : this(blockId, blockSize)
+        public BlockRef(uint blockId, int blockSize, int actualBlocks) : this(blockId, blockSize)
         {
             ActualBlocks = actualBlocks;
         }

@@ -333,7 +333,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
                     _current = _next;
             }
             if (!_hasNext)
-                _next = default(T);
+                _next = default;
 
             return true;
         }

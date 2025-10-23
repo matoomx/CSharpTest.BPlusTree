@@ -18,7 +18,7 @@ namespace CSharpTest.Collections.Generic;
 
 public sealed partial class TransactionLog<TKey, TValue>
 {
-	private class LogEntryComparer : IComparer<LogEntry>
+	private sealed class LogEntryComparer : IComparer<LogEntry>
     {
         private IComparer<TKey> _keyComparer;
         public LogEntryComparer(IComparer<TKey> keyComparer)

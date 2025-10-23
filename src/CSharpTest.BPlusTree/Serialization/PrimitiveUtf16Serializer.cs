@@ -27,7 +27,10 @@ internal sealed class PrimitiveUtf16Serializer : ISerializer<string>
 	string ISerializer<string>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
 	{
 		int sz = PrimitiveSerializer.Int32.ReadFrom(stream, ref position);
-		if (sz == 0) return string.Empty;
+		
+		if (sz == 0) 
+			return string.Empty;
+		
 		if (sz == int.MinValue)
 			return null;
 

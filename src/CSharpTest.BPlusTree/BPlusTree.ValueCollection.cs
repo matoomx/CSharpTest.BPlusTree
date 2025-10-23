@@ -20,7 +20,7 @@ namespace CSharpTest.Collections.Generic;
 public sealed partial class BPlusTree<TKey, TValue>
 {
 	private ValueCollection _valuesCollection;
-	class ValueCollection : ICollection<TValue>
+	sealed class ValueCollection : ICollection<TValue>
     {
         private readonly IDictionary<TKey, TValue> _owner;
 

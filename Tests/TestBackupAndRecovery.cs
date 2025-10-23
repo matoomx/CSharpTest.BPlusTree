@@ -26,7 +26,7 @@ namespace BPlusTreeTests;
 [TestClass]
 public class TestBackupAndRecovery
 {
-    BPlusTree<Guid, TestInfo>.Options GetOptions(TempFile temp)
+	static BPlusTree<Guid, TestInfo>.Options GetOptions(TempFile temp)
     {
         var options = new BPlusTree<Guid, TestInfo>.Options(PrimitiveSerializer.Guid, new TestInfoSerializer());
         options.CalcBTreeOrder(Marshal.SizeOf<Guid>(), 4096);
@@ -177,7 +177,7 @@ public class TestBackupAndRecovery
 		TestRecoveryOnExisting(options, 100, ushort.MaxValue);
 	}
 
-    void TestRecoveryOnNew(BPlusTree<Guid, TestInfo>.Options options, int count, int added)
+	static void TestRecoveryOnNew(BPlusTree<Guid, TestInfo>.Options options, int count, int added)
     {
         BPlusTree<Guid, TestInfo> tree = null;
         var temp = TempFile.Attach(options.FileName);
@@ -219,7 +219,7 @@ public class TestBackupAndRecovery
     }
 
 
-	private ITransactionLog<TKey, TValue> EnsureLogFile<TKey, TValue>(BPlusTree<TKey, TValue>.Options options)
+	private static ITransactionLog<TKey, TValue> EnsureLogFile<TKey, TValue>(BPlusTree<TKey, TValue>.Options options)
 	{
 		if (options.GetLogFile() == null && options.FileName != null)
 			options.SetLogFile(new TransactionLog<TKey, TValue>(new TransactionLogOptions<TKey, TValue>(Path.ChangeExtension(options.FileName, ".tlog"), options.KeySerializer, options.ValueSerializer)));
@@ -227,7 +227,7 @@ public class TestBackupAndRecovery
 		return options.GetLogFile();
 	}
 
-    void TestRecoveryOnExisting(BPlusTree<Guid, TestInfo>.Options options, int count, int added)
+	static void TestRecoveryOnExisting(BPlusTree<Guid, TestInfo>.Options options, int count, int added)
     {
         var temp = TempFile.Attach(options.FileName);
 		BPlusTree<Guid, TestInfo> tree = null;

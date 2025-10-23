@@ -70,7 +70,7 @@ partial class BPlusTree<TKey, TValue>
             }
             else
             {
-				using RootLock root = _tree.LockRoot(LockType.Read, "Enumerator");
+				using RootLock root = _tree.LockRoot(LockType.Read);
 				using NodePin first = SeekFirst(root.Pin, out _nextKey, out _hasMore);
 				FillFromNode(first.Ptr);
 				_enumComplete = _currentLimit == 0;
@@ -104,7 +104,7 @@ partial class BPlusTree<TKey, TValue>
             }
 
             bool success = false;
-            using (RootLock root = _tree.LockRoot(LockType.Read, "Enumerator"))
+            using (RootLock root = _tree.LockRoot(LockType.Read))
             {
 				if (_hasMore && SeekNext(root.Pin, _nextKey, out NodePin next, out int offset, out _nextKey, out _hasMore))
 				{

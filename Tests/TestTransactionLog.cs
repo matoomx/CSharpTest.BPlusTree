@@ -24,7 +24,7 @@ namespace BPlusTreeTests;
 [TestClass]
 public class TestTransactionLog
 {
-    TransactionLogOptions<int, string> Options(TempFile file)
+	static TransactionLogOptions<int, string> Options(TempFile file)
     {
         return new TransactionLogOptions<int, string>(file.TempPath, PrimitiveSerializer.Int32, PrimitiveSerializer.String)
         {
@@ -59,107 +59,97 @@ public class TestTransactionLog
     [TestMethod]
     public void TestAddOperation()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
 
-            Assert.HasCount(1, test);
-            Assert.IsTrue(test.ContainsKey(1));
-            Assert.AreEqual("test", test[1]);
-        }
-    }
+		Assert.HasCount(1, test);
+		Assert.IsTrue(test.ContainsKey(1));
+		Assert.AreEqual("test", test[1]);
+	}
     [TestMethod]
     public void TestUpdateOperation()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.UpdateValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.UpdateValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            test.Add(1, null);
-            log.ReplayLog(test);
+		var test = new Dictionary<int, string>();
+		test.Add(1, null);
+		log.ReplayLog(test);
 
-            Assert.HasCount(1, test);
-            Assert.IsTrue(test.ContainsKey(1));
-            Assert.AreEqual("test", test[1]);
-        }
-    }
+		Assert.HasCount(1, test);
+		Assert.IsTrue(test.ContainsKey(1));
+		Assert.AreEqual("test", test[1]);
+	}
     [TestMethod]
     public void TestRemoveOperation()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.RemoveValue(ref token, 1);
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.RemoveValue(ref token, 1);
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            test.Add(1, null);
-            log.ReplayLog(test);
+		var test = new Dictionary<int, string>();
+		test.Add(1, null);
+		log.ReplayLog(test);
 
-            Assert.IsEmpty(test);
-        }
-    }
+		Assert.IsEmpty(test);
+	}
     [TestMethod]
     public void TestMultipleWriteAndReplay()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.AddValue(ref token, 2, "test");
-            log.AddValue(ref token, 3, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.AddValue(ref token, 2, "test");
+		log.AddValue(ref token, 3, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
-            Assert.HasCount(3, test);
-            for (int i = 1; i <= 3; i++)
-                Assert.AreEqual("test", test[i]);
-        }
-    }
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
+		Assert.HasCount(3, test);
+		for (int i = 1; i <= 3; i++)
+			Assert.AreEqual("test", test[i]);
+	}
     [TestMethod]
     public void TestMultipleTransAndReplay()
     {
 
-        using (TempFile tmp = new TempFile())
-        {
-            var opts = Options(tmp);
-            using (var log = new TransactionLog<int, string>(opts))
-            {
-                var token = log.BeginTransaction();
-                log.AddValue(ref token, 1, "test");
-                log.CommitTransaction(ref token);
-                token = log.BeginTransaction();
-                log.AddValue(ref token, 2, "test");
-                log.CommitTransaction(ref token);
-                token = log.BeginTransaction();
-                log.AddValue(ref token, 3, "test");
-                log.CommitTransaction(ref token);
-                log.Close();
-            }
+		using TempFile tmp = new TempFile();
+		var opts = Options(tmp);
+		using (var log = new TransactionLog<int, string>(opts))
+		{
+			var token = log.BeginTransaction();
+			log.AddValue(ref token, 1, "test");
+			log.CommitTransaction(ref token);
+			token = log.BeginTransaction();
+			log.AddValue(ref token, 2, "test");
+			log.CommitTransaction(ref token);
+			token = log.BeginTransaction();
+			log.AddValue(ref token, 3, "test");
+			log.CommitTransaction(ref token);
+			log.Close();
+		}
 
-            using (var log = new TransactionLog<int, string>(opts))
-            {
-                var test = new Dictionary<int, string>();
-                log.ReplayLog(test);
-                Assert.HasCount(3, test);
-                for (int i = 1; i <= 3; i++)
-                    Assert.AreEqual("test", test[i]);
-            }
-        }
-    }
+		using (var log = new TransactionLog<int, string>(opts))
+		{
+			var test = new Dictionary<int, string>();
+			log.ReplayLog(test);
+			Assert.HasCount(3, test);
+			for (int i = 1; i <= 3; i++)
+				Assert.AreEqual("test", test[i]);
+		}
+	}
     //[TestMethod]
     public void TestBenchmarkWriteSpeed()
     {
@@ -169,52 +159,50 @@ public class TestTransactionLog
 
 
         string newpath = Path.Combine(@"C:\Temp\LogTest\", Guid.NewGuid() + ".tmp");
-        using (TempFile tmp = TempFile.Attach(newpath))
-        {
-            byte[] bytes;
-            DateTime start;
-            //bytes = new byte[128];
-            //new Random().NextBytes(bytes);
+		using TempFile tmp = TempFile.Attach(newpath);
+		byte[] bytes;
+		DateTime start;
+		//bytes = new byte[128];
+		//new Random().NextBytes(bytes);
 
-            //start = DateTime.UtcNow;
-            //using (var io = new FileStream(tmp.TempPath, FileMode.Append, FileAccess.Write, FileShare.Read, 8))
-            //{
-            //    for (int i = 0; i <= 16777216; i++)
-            //        io.Write(bytes, 0, 128);
-            //}
-            //Console.WriteLine("Write {0:n0} bytes in: {1}", tmp.Length, DateTime.UtcNow - start);
-            //tmp.Delete();
+		//start = DateTime.UtcNow;
+		//using (var io = new FileStream(tmp.TempPath, FileMode.Append, FileAccess.Write, FileShare.Read, 8))
+		//{
+		//    for (int i = 0; i <= 16777216; i++)
+		//        io.Write(bytes, 0, 128);
+		//}
+		//Console.WriteLine("Write {0:n0} bytes in: {1}", tmp.Length, DateTime.UtcNow - start);
+		//tmp.Delete();
 
-            var options = new TransactionLogOptions<Guid, byte[]>(
-            tmp.TempPath, PrimitiveSerializer.Guid, PrimitiveSerializer.Bytes) 
-            {
-                FileBuffer = ushort.MaxValue,
-                FileOptions = FileOptions.None | FileOptions.SequentialScan,
-            };
+		var options = new TransactionLogOptions<Guid, byte[]>(
+		tmp.TempPath, PrimitiveSerializer.Guid, PrimitiveSerializer.Bytes)
+		{
+			FileBuffer = ushort.MaxValue,
+			FileOptions = FileOptions.None | FileOptions.SequentialScan,
+		};
 
-            Guid[] ids = new Guid[1000000];
-            for (int i = 0; i < ids.Length; i++)
-                ids[i] = Guid.NewGuid();
+		Guid[] ids = new Guid[1000000];
+		for (int i = 0; i < ids.Length; i++)
+			ids[i] = Guid.NewGuid();
 
-            bytes = new byte[100];
-            new Random().NextBytes(bytes);
+		bytes = new byte[100];
+		new Random().NextBytes(bytes);
 
-            start = DateTime.UtcNow;
+		start = DateTime.UtcNow;
 
-            using (var log = new TransactionLog<Guid, byte[]>(options))
-            {
-                foreach(Guid id in ids)
-                {
-                    var token = log.BeginTransaction();
-                    for (int i = 0; i < 20; i++)
-                        log.AddValue(ref token, id, bytes);
-                    log.CommitTransaction(ref token);
-                }
-            }
+		using (var log = new TransactionLog<Guid, byte[]>(options))
+		{
+			foreach (Guid id in ids)
+			{
+				var token = log.BeginTransaction();
+				for (int i = 0; i < 20; i++)
+					log.AddValue(ref token, id, bytes);
+				log.CommitTransaction(ref token);
+			}
+		}
 
-            Console.WriteLine("Logged {0:n0} bytes in: {1}", tmp.Length, DateTime.UtcNow - start);
-        }
-    }
+		Console.WriteLine("Logged {0:n0} bytes in: {1}", tmp.Length, DateTime.UtcNow - start);
+	}
 
     [TestMethod]
     public void TestLargeWriteAndReplay()
@@ -236,123 +224,111 @@ public class TestTransactionLog
     [TestMethod]
     public void TestProgressiveReplay()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            long position = 0;
-            log.ReplayLog(test, ref position);
-            Assert.HasCount(1, test);
-            test.Clear();
+		var test = new Dictionary<int, string>();
+		long position = 0;
+		log.ReplayLog(test, ref position);
+		Assert.HasCount(1, test);
+		test.Clear();
 
-            log.ReplayLog(test, ref position);
-            Assert.IsEmpty(test);
+		log.ReplayLog(test, ref position);
+		Assert.IsEmpty(test);
 
-            token = log.BeginTransaction();
-            log.AddValue(ref token, 2, "test");
-            log.CommitTransaction(ref token);
+		token = log.BeginTransaction();
+		log.AddValue(ref token, 2, "test");
+		log.CommitTransaction(ref token);
 
-            log.ReplayLog(test, ref position);
-            Assert.HasCount(1, test);
-            Assert.IsTrue(test.ContainsKey(2));
-            Assert.AreEqual("test", test[2]);
-        }
-    }
+		log.ReplayLog(test, ref position);
+		Assert.HasCount(1, test);
+		Assert.IsTrue(test.ContainsKey(2));
+		Assert.AreEqual("test", test[2]);
+	}
     [TestMethod]
     public void TestSingleRollbackAndReplay()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.RollbackTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.RollbackTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
-            Assert.IsEmpty(test);
-        }
-    }
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
+		Assert.IsEmpty(test);
+	}
     [TestMethod]
     public void TestPositionAndReplay()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);
 
-            long size = long.MaxValue;
-            log.ReplayLog(null, ref size);
+		long size = long.MaxValue;
+		log.ReplayLog(null, ref size);
 
-            token = log.BeginTransaction();
-            log.AddValue(ref token, 2, "test");
-            log.CommitTransaction(ref token);
+		token = log.BeginTransaction();
+		log.AddValue(ref token, 2, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test, ref size);
-            Assert.HasCount(1, test);
-            Assert.AreEqual("test", test[2]);
-        }
-    }
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test, ref size);
+		Assert.HasCount(1, test);
+		Assert.AreEqual("test", test[2]);
+	}
     [TestMethod]
     public void TestCommitEmptyAndReplay()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.CommitTransaction(ref token);//commit empty
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.CommitTransaction(ref token);//commit empty
 
-            token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);//add value
+		token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);//add value
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
-            Assert.HasCount(1, test);
-        }
-    }
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
+		Assert.HasCount(1, test);
+	}
     [TestMethod]
     public void TestReplayEmpty()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
-            Assert.HasCount(0, test);
-        }
-    }
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
+		Assert.HasCount(0, test);
+	}
     [TestMethod]
     public void TestTruncateLog()
     {
-        using (TempFile tmp = new TempFile())
-        using (var log = new TransactionLog<int, string>(Options(tmp)))
-        {
-            var token = log.BeginTransaction();
-            log.AddValue(ref token, 1, "test");
-            log.CommitTransaction(ref token);
+		using TempFile tmp = new TempFile();
+		using var log = new TransactionLog<int, string>(Options(tmp));
+		var token = log.BeginTransaction();
+		log.AddValue(ref token, 1, "test");
+		log.CommitTransaction(ref token);
 
-            var test = new Dictionary<int, string>();
-            log.ReplayLog(test);
+		var test = new Dictionary<int, string>();
+		log.ReplayLog(test);
 
-            Assert.HasCount(1, test);
-            Assert.IsTrue(test.ContainsKey(1));
-            Assert.AreEqual("test", test[1]);
+		Assert.HasCount(1, test);
+		Assert.IsTrue(test.ContainsKey(1));
+		Assert.AreEqual("test", test[1]);
 
-            log.TruncateLog();
-            test.Clear();
-            log.ReplayLog(test);
+		log.TruncateLog();
+		test.Clear();
+		log.ReplayLog(test);
 
-            Assert.HasCount(0, test);
-        }
-    }
+		Assert.HasCount(0, test);
+	}
     [TestMethod]
     public void TestLogWithJunkAppended()
     {

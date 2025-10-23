@@ -261,7 +261,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     /// </summary>
 	private void UpdateCount()
 	{
-		using RootLock root = LockRoot(LockType.Read, "EnableCount", true);
+		using RootLock root = LockRoot(LockType.Read, true);
 		_count = CountValues(root.Pin);
 	}
 
@@ -314,7 +314,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     {
         bool result;
         value = default;
-        using (RootLock root = LockRoot(LockType.Read, "TryGetValue"))
+        using (RootLock root = LockRoot(LockType.Read))
             result = Search(root.Pin, key, ref value);
 
         return result;
@@ -330,7 +330,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     public bool TryUpdate(TKey key, TValue value)
     {
         var ui = new UpdateInfo(value);
-        using (RootLock root = LockRoot(LockType.Update, "Update"))
+        using (RootLock root = LockRoot(LockType.Update))
             Update(root.Pin, key, ref ui);
 
         return ui.Updated;
@@ -346,7 +346,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     public bool TryUpdate(TKey key, TValue value, TValue comparisonValue)
     {
         var ui = new UpdateIfValue(value, comparisonValue);
-        using (RootLock root = LockRoot(LockType.Update, "Update"))
+        using (RootLock root = LockRoot(LockType.Update))
             Update(root.Pin, key, ref ui);
 
         return ui.Updated;
@@ -362,7 +362,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     public bool TryUpdate(TKey key, KeyValueUpdate<TKey, TValue> fnUpdate)
     {
         var ui = new UpdateInfo(fnUpdate);
-        using (RootLock root = LockRoot(LockType.Update, "Update"))
+        using (RootLock root = LockRoot(LockType.Update))
             Update(root.Pin, key, ref ui);
 
         return ui.Updated;
@@ -447,7 +447,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
             while (!bulk.IsComplete)
             {
                 var range = new KeyRange(_keyComparer);
-                using var root = LockRoot(LockType.Insert, "BulkInsert");
+                using var root = LockRoot(LockType.Insert);
                 result += AddRange(root.Pin, ref range, bulk, null, int.MinValue);
             }
         }
@@ -544,7 +544,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     private InsertResult AddEntry<T>(TKey key, ref T info) where T : ICreateOrUpdateValue<TKey, TValue>
     {
         InsertResult result;
-        using (RootLock root = LockRoot(LockType.Insert, "AddOrUpdate"))
+        using (RootLock root = LockRoot(LockType.Insert))
             result = Insert(root.Pin, key, ref info, null, int.MinValue);
         
         if (result == InsertResult.Inserted && _hasCount)
@@ -609,7 +609,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     {
         RemoveResult result;
         
-        using (RootLock root = LockRoot(LockType.Delete, "Remove"))
+        using (RootLock root = LockRoot(LockType.Delete))
             result = Delete(root.Pin, key, ref removeValue, null, int.MinValue);
         
         if (result == RemoveResult.Removed && _hasCount)
@@ -634,7 +634,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     /// </summary>
     public bool TryGetFirst(out KeyValuePair<TKey, TValue> item)
     {
-        using var root = LockRoot(LockType.Read, "TryGetFirst");
+        using var root = LockRoot(LockType.Read);
         return TryGetEdge(root.Pin, true, out item);
     }
 
@@ -654,7 +654,7 @@ public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable
     /// </summary>
     public bool TryGetLast(out KeyValuePair<TKey, TValue> item)
     {
-        using var root = LockRoot(LockType.Read, "TryGetLast");
+        using var root = LockRoot(LockType.Read);
         return TryGetEdge(root.Pin, false, out item);
     }
 

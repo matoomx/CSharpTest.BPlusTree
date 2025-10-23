@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,27 +27,27 @@ namespace CSharpTest.Collections.Generic;
 /// is smaller than 8,388,608 (one megabyte of bits).  Pre-allocate with Ceiling = max for better
 /// performance, or add the integers in reverse order (highest to lowest).
 /// </summary>
-public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneable
+public sealed class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneable
 {
-	#region Static cache for Count { get; }
-	static readonly byte[] BitCount;
+	static readonly byte[] BitCount = CaclulateBitCount();
 
-	static OrdinalList()
+	static byte[] CaclulateBitCount()
 	{
-		BitCount = new byte[byte.MaxValue + 1];
+		var res = new byte[byte.MaxValue + 1];
 		for (int i = 0; i <= byte.MaxValue; i++)
 		{
-			if ((i & 0x0001) != 0) BitCount[i]++;
-			if ((i & 0x0002) != 0) BitCount[i]++;
-			if ((i & 0x0004) != 0) BitCount[i]++;
-			if ((i & 0x0008) != 0) BitCount[i]++;
-			if ((i & 0x0010) != 0) BitCount[i]++;
-			if ((i & 0x0020) != 0) BitCount[i]++;
-			if ((i & 0x0040) != 0) BitCount[i]++;
-			if ((i & 0x0080) != 0) BitCount[i]++;
+			if ((i & 0x0001) != 0) res[i]++;
+			if ((i & 0x0002) != 0) res[i]++;
+			if ((i & 0x0004) != 0) res[i]++;
+			if ((i & 0x0008) != 0) res[i]++;
+			if ((i & 0x0010) != 0) res[i]++;
+			if ((i & 0x0020) != 0) res[i]++;
+			if ((i & 0x0040) != 0) res[i]++;
+			if ((i & 0x0080) != 0) res[i]++;
 		}
+
+		return res;
 	}
-	#endregion
 
 	byte[] _bits;
 
@@ -100,12 +101,12 @@ public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneabl
 
 	private void AllocFor(int max)
 	{
-            if (max >= 0)
-                max = 1 + (max >> 3);
-            else if (max == -1)
-                max = 0;
-            else
-                throw new ArgumentOutOfRangeException(nameof(max));
+        if (max >= 0)
+            max = 1 + (max >> 3);
+        else if (max == -1)
+            max = 0;
+        else
+            throw new ArgumentOutOfRangeException(nameof(max));
 
 		if (max > _bits.Length)
 			Array.Resize(ref _bits, max);
@@ -147,14 +148,14 @@ public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneabl
 	{
 		int offset = item >> 3;
 		int bit = 1 << (item & 0x07);
-            if (offset < _bits.Length)
+        if (offset < _bits.Length)
+        {
+            if (0 != (_bits[offset] & unchecked((byte)bit)))
             {
-                if (0 != (_bits[offset] & unchecked((byte)bit)))
-                {
-                    _bits[offset] &= unchecked((byte)~bit);
-                    return true;
-                }
+                _bits[offset] &= unchecked((byte)~bit);
+                return true;
             }
+        }
 		return false;
 	}
 
@@ -188,14 +189,14 @@ public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneabl
 	public byte[] ToByteArray() { return (byte[])_bits.Clone(); }
 
 	#region Set Operations
-        /// <summary> Returns the 1's compliment (inverts) of the list up to Ceiling </summary>
-        public OrdinalList Invert(int ceiling)
+    /// <summary> Returns the 1's compliment (inverts) of the list up to Ceiling </summary>
+    public OrdinalList Invert(int ceiling)
+    {
+        unchecked
         {
-            unchecked
-            {
-                byte[] copy = new byte[_bits.Length];
-                for (int i = 0; i < _bits.Length; i++)
-                    copy[i] = (byte)~_bits[i];
+            byte[] copy = new byte[_bits.Length];
+            for (int i = 0; i < _bits.Length; i++)
+                copy[i] = (byte)~_bits[i];
 
 			OrdinalList result = new OrdinalList
 			{
@@ -204,18 +205,18 @@ public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneabl
 			};
 
 			int limit = result.Ceiling;
-                for (int i = Ceiling; i < limit; i++)
-                    result.Add(i);
-                for (int i = ceiling + 1; i <= limit; i++)
-                    result.Remove(i);
+            for (int i = Ceiling; i < limit; i++)
+                result.Add(i);
+            for (int i = ceiling + 1; i <= limit; i++)
+                result.Remove(i);
 
-                return result;
-            }
+            return result;
         }
+    }
 
-        /// <summary> Returns the set of items that are in both this set and the provided set </summary>
-        /// <example>{ 1, 2, 3 }.IntersectWith({ 2, 3, 4 }) == { 2, 3 }</example>
-        public OrdinalList IntersectWith(OrdinalList other)
+    /// <summary> Returns the set of items that are in both this set and the provided set </summary>
+    /// <example>{ 1, 2, 3 }.IntersectWith({ 2, 3, 4 }) == { 2, 3 }</example>
+    public OrdinalList IntersectWith(OrdinalList other)
 	{
 		byte[] small, big;
 		big = _bits.Length > other._bits.Length ? _bits : other._bits;
@@ -271,57 +272,57 @@ public class OrdinalList : ICollection<int>, ICollection, IEnumerable, ICloneabl
 	object ICollection.SyncRoot
 	{
             get { return this; }
-        }
+    }
 
-        /// <summary> Returns an enumeration of the ordinal values </summary>
-        public IEnumerable<int> EnumerateFrom(int startAt)
-        {
-            return EnumerateRange(startAt, int.MaxValue);
-        }
+    /// <summary> Returns an enumeration of the ordinal values </summary>
+    public IEnumerable<int> EnumerateFrom(int startAt)
+    {
+        return EnumerateRange(startAt, int.MaxValue);
+    }
 
-        /// <summary> Returns an enumeration of the ordinal values </summary>
-        public IEnumerable<int> EnumerateRange(int startAt, int endAt)
+    /// <summary> Returns an enumeration of the ordinal values </summary>
+    public IEnumerable<int> EnumerateRange(int startAt, int endAt)
+    {
+        int ordinal = startAt & ~0x07;
+        //foreach (byte i in _bits)
+        for(int ix = startAt >> 3; ix < _bits.Length; ix++)
         {
-            int ordinal = startAt & ~0x07;
-            //foreach (byte i in _bits)
-            for(int ix = startAt >> 3; ix < _bits.Length; ix++)
+            if (_bits[ix] != 0)
             {
-                if (_bits[ix] != 0)
-                {
-                    int i = _bits[ix];
-                    if ((i & 0x0001) != 0) yield return ordinal + 0;
-                    if ((i & 0x0002) != 0) yield return ordinal + 1;
-                    if ((i & 0x0004) != 0) yield return ordinal + 2;
-                    if ((i & 0x0008) != 0) yield return ordinal + 3;
-                    if ((i & 0x0010) != 0) yield return ordinal + 4;
-                    if ((i & 0x0020) != 0) yield return ordinal + 5;
-                    if ((i & 0x0040) != 0) yield return ordinal + 6;
-                    if ((i & 0x0080) != 0) yield return ordinal + 7;
-                }
-                ordinal += 8;
-                if (ordinal > endAt)
-                    break;
+                int i = _bits[ix];
+                if ((i & 0x0001) != 0) yield return ordinal + 0;
+                if ((i & 0x0002) != 0) yield return ordinal + 1;
+                if ((i & 0x0004) != 0) yield return ordinal + 2;
+                if ((i & 0x0008) != 0) yield return ordinal + 3;
+                if ((i & 0x0010) != 0) yield return ordinal + 4;
+                if ((i & 0x0020) != 0) yield return ordinal + 5;
+                if ((i & 0x0040) != 0) yield return ordinal + 6;
+                if ((i & 0x0080) != 0) yield return ordinal + 7;
             }
+            ordinal += 8;
+            if (ordinal > endAt)
+                break;
         }
+    }
 
-        /// <summary> Returns an enumeration of the ordinal values </summary>
-        public IEnumerator<int> GetEnumerator()
-        {
-            return EnumerateFrom(0).GetEnumerator();
-        }
+    /// <summary> Returns an enumeration of the ordinal values </summary>
+    public IEnumerator<int> GetEnumerator()
+    {
+        return EnumerateFrom(0).GetEnumerator();
+    }
 
 	System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return EnumerateFrom(0).GetEnumerator();
+    {
+        return EnumerateFrom(0).GetEnumerator();
 	}
 
 	#endregion
 
     object ICloneable.Clone() { return Clone(); }
 
-        /// <summary>
-        /// Creates a new object that is a copy of the current instance.
-        /// </summary>
+    /// <summary>
+    /// Creates a new object that is a copy of the current instance.
+    /// </summary>
     public OrdinalList Clone()
     {
 		return  new OrdinalList

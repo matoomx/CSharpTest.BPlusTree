@@ -42,15 +42,13 @@ public abstract class BaseLockTest<TFactory> where TFactory : ILockFactory, new(
 	[TestMethod]
 	public void TestTryReadThenTryWrite()
     {
-        using (ILockStrategy l = LockFactory.Create())
-        {
-            Assert.IsTrue(l.TryRead(0));
-            l.ReleaseRead();
+		using ILockStrategy l = LockFactory.Create();
+		Assert.IsTrue(l.TryRead(0));
+		l.ReleaseRead();
 
-            Assert.IsTrue(l.TryWrite(0));
-            l.ReleaseWrite();
-        }
-    }
+		Assert.IsTrue(l.TryWrite(0));
+		l.ReleaseWrite();
+	}
 
 	[TestMethod]
 	public void TestTryWriteThenTryRead()

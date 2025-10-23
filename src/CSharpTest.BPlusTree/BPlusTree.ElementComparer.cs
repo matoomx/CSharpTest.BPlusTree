@@ -19,7 +19,7 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-	class ElementComparer : IComparer<Element>
+	sealed class ElementComparer : IComparer<Element>
     {
         private readonly IComparer<TKey> _keyCompare;
 

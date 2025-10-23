@@ -169,7 +169,6 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 		}
 	}
 
-
 	private sealed class BlockSegment : ReadOnlySequenceSegment<byte>
 	{
 		public BlockSegment(Memory<byte> memory) => this.Memory = memory;

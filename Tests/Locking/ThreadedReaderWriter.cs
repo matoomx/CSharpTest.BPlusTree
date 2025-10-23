@@ -65,6 +65,12 @@ public class ThreadedWriter : IDisposable
             _complete.Set();
             _async.GetAwaiter().GetResult();
         }
+
+        _started.Dispose();
+        _complete.Dispose();
+        _async?.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     void HoldLock()

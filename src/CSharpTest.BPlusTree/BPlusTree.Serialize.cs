@@ -19,16 +19,7 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-    class InvalidSerializer<T> : ISerializer<T>
-    {
-        private InvalidSerializer() { }
-        internal static readonly ISerializer<T> Instance = new InvalidSerializer<T>();
-
-        [Obsolete] T ISerializer<T>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position) { throw new NotSupportedException(); }
-        [Obsolete] void ISerializer<T>.WriteTo(T value, IBufferWriter<byte> stream) { throw new NotSupportedException(); }
-    }
-
-    class NodeSerializer : ISerializer<Node>
+    sealed class NodeSerializer : ISerializer<Node>
     {
         readonly ISerializer<int> _intSerializer = PrimitiveSerializer.Instance;
         readonly ISerializer<bool> _boolSerializer = PrimitiveSerializer.Instance;

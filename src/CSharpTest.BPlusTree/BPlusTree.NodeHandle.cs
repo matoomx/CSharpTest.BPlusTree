@@ -21,7 +21,7 @@ namespace CSharpTest.Collections.Generic;
 partial class BPlusTree<TKey, TValue>
 {
     [DebuggerDisplay("Handle({_storeHandle})")]
-    class NodeHandle : IEquatable<NodeHandle>
+    sealed class NodeHandle : IEquatable<NodeHandle>
     {
         private readonly IStorageHandle _storeHandle;
         private object _cacheEntry;

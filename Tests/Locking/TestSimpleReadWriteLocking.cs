@@ -26,8 +26,8 @@ public class TestSimpleReadWriteLocking : BaseThreadedReaderWriterTest<LockFacto
     [TestMethod]
     public void ExplicitSyncObject()
     {
-        Object obj = new object();
-        ILockStrategy l = new SimpleReadWriteLocking(obj);
+        var obj = new object();
+        var l = new SimpleReadWriteLocking(obj);
         using(new ThreadedWriter(l))
             Assert.IsFalse(Monitor.TryEnter(obj, 0));
         l.Dispose();
@@ -42,10 +42,11 @@ public class TestSimpleReadWriteLocking : BaseThreadedReaderWriterTest<LockFacto
     [TestMethod]
     public void DisposedWithReaders()
     {
-        Assert.Throws<InvalidOperationException>(() =>
+		var l = LockFactory.Create();
+		var thread = new ThreadedReader(l);
+
+		Assert.Throws<InvalidOperationException>(() =>
         {
-            ILockStrategy l = LockFactory.Create();
-            ThreadedReader thread = new ThreadedReader(l);
             try
             {
                 l.Dispose();
@@ -62,10 +63,11 @@ public class TestSimpleReadWriteLocking : BaseThreadedReaderWriterTest<LockFacto
     [TestMethod]
     public void DisposedWithWriters()
     {
-        Assert.Throws<InvalidOperationException>(() =>
+		var l = LockFactory.Create();
+		var thread = new ThreadedWriter(l);
+
+		Assert.Throws<InvalidOperationException>(() =>
         {
-            ILockStrategy l = LockFactory.Create();
-            ThreadedWriter thread = new ThreadedWriter(l);
             try
             {
                 l.Dispose();

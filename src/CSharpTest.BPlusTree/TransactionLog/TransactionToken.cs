@@ -16,7 +16,7 @@
 namespace CSharpTest.Collections.Generic;
 
 /// <summary>
-/// A value representing the state/identifer/object of a single transaction.  The field's
+/// A value representing the state/identifer/object of a single transaction. The field's
 /// meaning is defined by the ITrasactionLog implementation and is otherwise treated as an
 /// opaque token identifier of the transaction.
 /// </summary>

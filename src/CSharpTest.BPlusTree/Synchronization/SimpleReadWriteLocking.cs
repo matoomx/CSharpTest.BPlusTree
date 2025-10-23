@@ -24,15 +24,38 @@ namespace CSharpTest.Collections.Generic;
 public sealed class SimpleReadWriteLocking : ILockStrategy
 {
     /// <summary> Max number of Spin loops before polling the _event </summary>
-    static readonly int SpinLoops;
+    static readonly int SpinLoops = SpinLoopsDefault();
     /// <summary> Number of iterations used for Thread.SpinWait(x) </summary>
-    static readonly int SpinWaitTime;
+    static readonly int SpinWaitTime = SpinWaitTimeDefault();
     /// <summary> Setup of the SpinWaitTime/SpinLoops by processor count </summary>
-    static SimpleReadWriteLocking()
-    { try { if (Environment.ProcessorCount > 0) { SpinWaitTime = 25; SpinLoops = 100; } } catch { SpinWaitTime = 0; SpinLoops = 0; } }
+    static int SpinWaitTimeDefault()
+    { 
+        try 
+        { 
+            if (Environment.ProcessorCount > 0) 
+                return 25; 
+        } 
+        catch 
+        { 
+        }
+		return 0;
+	}
 
-    /// <summary> The event used to wake a waiting writer when a read lock is released </summary>
-    AutoResetEvent _event;
+	static int SpinLoopsDefault()
+	{
+		try
+		{
+			if (Environment.ProcessorCount > 0)
+				return 100;
+		}
+		catch
+		{
+		}
+		return 0;
+	}
+
+	/// <summary> The event used to wake a waiting writer when a read lock is released </summary>
+	AutoResetEvent _event;
     /// <summary> The syncronization object writers and potential readers use to lock </summary>
     object _sync;
     /// <summary> The total number of read locks on this lock </summary>

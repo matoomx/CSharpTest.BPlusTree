@@ -19,7 +19,7 @@ namespace CSharpTest.Collections.Generic;
 /// <summary>
 /// Represents a key-value comparison
 /// </summary>
-public class KeyValueComparer<TKey, TValue> : IComparer<KeyValuePair<TKey, TValue>>
+public sealed class KeyValueComparer<TKey, TValue> : IComparer<KeyValuePair<TKey, TValue>>
 {
     private readonly IComparer<TKey> _keyComparer;
 

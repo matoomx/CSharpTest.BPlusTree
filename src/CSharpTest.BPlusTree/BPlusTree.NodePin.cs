@@ -24,7 +24,7 @@ partial class BPlusTree<TKey, TValue>
     enum LockType { Read = 1, Insert = 2, Update = 3, Delete = 4 }
 
     [System.Diagnostics.DebuggerDisplay("{Ptr._list}")]
-    class NodePin : NodeVersion, IDisposable
+    sealed class NodePin : NodeVersion, IDisposable
     {
         private readonly NodeHandle _handle;
         private readonly object _reference;
