@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="Benchmark/CSharpTest.Benchmark/CSharpTest.Benchmark.csproj" Id="eb03058a-99d0-411d-9d49-6a211adfb792" />
+  <Project Path="Benchmark/CSharpTest.Benchmark.csproj" />
   <Project Path="src/CSharpTest.BPlusTree/CSharpTest.BPlusTree.csproj" />
   <Project Path="Tests/BPlusTreeTests.csproj" />
 </Solution>
