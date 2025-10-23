@@ -35,7 +35,29 @@ public sealed class ReloadTests
         }
     }
 
-    [TestMethod]
+	[TestMethod]
+	public void BasicTestUtf16()
+	{
+		var options = BPlusTree.CreateOptions(PrimitiveSerializer.StringUtf16, PrimitiveSerializer.Int32);
+		options.CalcBTreeOrder(16, 24);
+		options.CreateFile = CreatePolicy.Always;
+		options.FileName = Path.GetTempFileName();
+		using (var tree = BPlusTree.Create(options))
+		{
+			tree.Add("A", 1);
+			tree.Add("B", 2);
+			tree.Add("C", 3);
+		}
+		options.CreateFile = CreatePolicy.Never;
+		using (var tree = BPlusTree.Create(options))
+		{
+			Assert.AreEqual(1, tree["A"]);
+			Assert.AreEqual(2, tree["B"]);
+			Assert.AreEqual(3, tree["C"]);
+		}
+	}
+
+	[TestMethod]
     public void Remove()
     {
         var options = BPlusTree.CreateOptions(PrimitiveSerializer.String, PrimitiveSerializer.Int32);
