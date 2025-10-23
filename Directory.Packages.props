@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.4" />
+    <PackageVersion Include="System.IO.Hashing" Version="9.0.10" />
+    <PackageVersion Include="MSTest" Version="4.0.1" />
+    <PackageVersion Include="Umbraco.CSharpTest.Net.Collections" Version="15.0.0" />
+  </ItemGroup>
+</Project>
