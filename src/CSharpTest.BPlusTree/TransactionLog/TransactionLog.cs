@@ -28,7 +28,7 @@ namespace CSharpTest.Collections.Generic;
 public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey, TValue>
 {
     private const int StateOpen = 1, StateCommitted = 2, StateRolledback = 3;
-    private readonly object _logSync;
+    private readonly Lock _logSync;
     private readonly TransactionLogOptions<TKey, TValue> _options;
     private long _transactionId;
     private long _fLength;
@@ -40,7 +40,7 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
     public TransactionLog(TransactionLogOptions<TKey, TValue> options)
     {
         _options = options.Clone();
-        _logSync = new object();
+        _logSync = new Lock();
         _transactionId = 1;
         _logfile = null;
         try
@@ -113,12 +113,15 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
 		long[] refposition = [position];
 		try
         {
-            foreach (LogEntry entry in EnumerateLog(refposition))
+            lock (_logSync)
             {
-                if (entry.OpCode == OperationCode.Remove)
-                    target.Remove(entry.Key);
-                else
-                    target[entry.Key] = entry.Value;
+                foreach (LogEntry entry in EnumerateLog(refposition))
+                {
+                    if (entry.OpCode == OperationCode.Remove)
+                        target.Remove(entry.Key);
+                    else
+                        target[entry.Key] = entry.Value;
+                }
             }
         }
         finally
@@ -132,22 +135,30 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
     /// </summary>
     public IEnumerable<KeyValuePair<TKey, TValue>> MergeLog(IComparer<TKey> keyComparer, IEnumerable<KeyValuePair<TKey, TValue>> existing)
     {
-		// Order the log entries by key
-		var comparer = new LogEntryComparer(keyComparer);
-        var orderedLog = new OrderedEnumeration<LogEntry>(
-            comparer,
-            EnumerateLog(new long[1]),
-            new LogEntrySerializer(_options.KeySerializer, _options.ValueSerializer)
-            );
-
-        // Merge the existing data with the ordered log, using last value
-        var all = OrderedEnumeration<LogEntry>.Merge(comparer, DuplicateHandling.LastValueWins, LogEntry.FromKeyValuePairs(existing), orderedLog);
-
-        // Returns all key/value pairs that are not a remove operation
-        foreach (LogEntry le in all)
+        _logSync.Enter();
+        try
         {
-            if (le.OpCode != OperationCode.Remove)
-                yield return new KeyValuePair<TKey, TValue>(le.Key, le.Value);
+            // Order the log entries by key
+            var comparer = new LogEntryComparer(keyComparer);
+            var orderedLog = new OrderedEnumeration<LogEntry>(
+                comparer,
+                EnumerateLog(new long[1]),
+                new LogEntrySerializer(_options.KeySerializer, _options.ValueSerializer)
+                );
+
+            // Merge the existing data with the ordered log, using last value
+            var all = OrderedEnumeration<LogEntry>.Merge(comparer, DuplicateHandling.LastValueWins, LogEntry.FromKeyValuePairs(existing), orderedLog);
+
+            // Returns all key/value pairs that are not a remove operation
+            foreach (LogEntry le in all)
+            {
+                if (le.OpCode != OperationCode.Remove)
+                    yield return new KeyValuePair<TKey, TValue>(le.Key, le.Value);
+            }
+        }
+        finally 
+        { 
+            _logSync.Exit(); 
         }
     }
 
@@ -156,133 +167,130 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
     /// </summary>
     IEnumerable<LogEntry> EnumerateLog(long[] position)
     {
-        lock (_logSync)
+        long pos = 0;
+        long length;
+
+        if (!File.Exists(_options.FileName))
         {
-            long pos = 0;
-            long length;
+            position[0] = 0;
+            yield break;
+        }
 
-            if (!File.Exists(_options.FileName))
-            {
-                position[0] = 0;
-                yield break;
-            }
+        var buffer = ArrayPool<byte>.Shared.Rent(8192);
+        try
+        {
+			using var io = new FileStream(_options.FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0x10000, FileOptions.SequentialScan);
+			bool valid = true;
+			const int minSize = 16;
+			int size, temp, nbytes, szcontent;
+			short opCount;
+			var entry = new LogEntry();
 
-            var buffer = ArrayPool<byte>.Shared.Rent(8192);
-            try
-            {
-				using var io = new FileStream(_options.FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 0x10000, FileOptions.SequentialScan);
-				bool valid = true;
-				const int minSize = 16;
-				int size, temp, nbytes, szcontent;
-				short opCount;
-				var entry = new LogEntry();
+			length = io.Length;
+			if (position[0] < 0 || position[0] > length)
+			{
+				position[0] = length;
+				yield break;
+			}
 
-				length = io.Length;
-				if (position[0] < 0 || position[0] > length)
+			bool fixedOffset = position[0] > 0;
+			io.Position = position[0];
+
+			while (valid && (pos = position[0] = io.Position) + minSize < length)
+			{
+				try
 				{
-					position[0] = length;
-					yield break;
+					size = ReadIntFromStream(io);
+					size = ((byte)(size >> 24) == 0xbb) ? size & 0x00FFFFFF : -1;
+					if (size < minSize || pos + size + 4 > length)
+					{
+						if (fixedOffset)
+							yield break;
+						break;
+					}
+					fixedOffset = false;
+
+					if (size > buffer.Length)
+					{
+                        ArrayPool<byte>.Shared.Return(buffer);
+                        buffer = null;
+						buffer = ArrayPool<byte>.Shared.Rent(size + 8192);
+					}
+
+					szcontent = size - 8;
+
+					nbytes = 0;
+					while (nbytes < szcontent && (temp = io.Read(buffer, nbytes, szcontent - nbytes)) != 0)
+						nbytes += temp;
+
+					if (nbytes != szcontent)
+						break;
+
+                    var span = buffer.AsSpan(0, nbytes);
+					var crc = System.IO.Hashing.Crc32.HashToUInt32(span);
+					if (crc != ReadUintFromStream(io))
+						break;
+
+					temp = ReadIntFromStream(io);
+					if ((byte)(temp >> 24) != 0xee || (temp & 0x00FFFFFF) != size)
+						break;
+
+					entry.TransactionId = BinaryPrimitives.ReadInt32LittleEndian(span);
+					_transactionId = Math.Max(_transactionId, entry.TransactionId + 1);
+
+					opCount = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(4));
+					if (opCount <= 0 || opCount >= short.MaxValue)
+						break;
+				}
+				catch (InvalidDataException)
+				{
+					break;
 				}
 
-				bool fixedOffset = position[0] > 0;
-				io.Position = position[0];
+                var data = new ReadOnlySequence<byte>(buffer.AsMemory(6, nbytes -6));
+				var seqPos = data.Start;
+                var end = data.End;
 
-				while (valid && (pos = position[0] = io.Position) + minSize < length)
+				while (opCount-- > 0)
 				{
-					try
+					entry.OpCode = (OperationCode)PrimitiveSerializer.Int16.ReadFrom(data, ref seqPos);
+
+					if (entry.OpCode != OperationCode.Add && entry.OpCode != OperationCode.Update && entry.OpCode != OperationCode.Remove)
 					{
-						size = ReadIntFromStream(io);
-						size = ((byte)(size >> 24) == 0xbb) ? size & 0x00FFFFFF : -1;
-						if (size < minSize || pos + size + 4 > length)
-						{
-							if (fixedOffset)
-								yield break;
-							break;
-						}
-						fixedOffset = false;
-
-						if (size > buffer.Length)
-						{
-                            ArrayPool<byte>.Shared.Return(buffer);
-                            buffer = null;
-							buffer = ArrayPool<byte>.Shared.Rent(size + 8192);
-						}
-
-						szcontent = size - 8;
-
-						nbytes = 0;
-						while (nbytes < szcontent && (temp = io.Read(buffer, nbytes, szcontent - nbytes)) != 0)
-							nbytes += temp;
-
-						if (nbytes != szcontent)
-							break;
-
-                        var span = buffer.AsSpan(0, nbytes);
-						var crc = System.IO.Hashing.Crc32.HashToUInt32(span);
-						if (crc != ReadUintFromStream(io))
-							break;
-
-						temp = ReadIntFromStream(io);
-						if ((byte)(temp >> 24) != 0xee || (temp & 0x00FFFFFF) != size)
-							break;
-
-						entry.TransactionId = BinaryPrimitives.ReadInt32LittleEndian(span);
-						_transactionId = Math.Max(_transactionId, entry.TransactionId + 1);
-
-						opCount = BinaryPrimitives.ReadInt16LittleEndian(span.Slice(4));
-						if (opCount <= 0 || opCount >= short.MaxValue)
-							break;
-					}
-					catch (InvalidDataException)
-					{
+						valid = false;
 						break;
 					}
 
-                    var data = new ReadOnlySequence<byte>(buffer.AsMemory(6, nbytes -6));
-					var seqPos = data.Start;
-                    var end = data.End;
-
-					while (opCount-- > 0)
+					try
 					{
-						entry.OpCode = (OperationCode)PrimitiveSerializer.Int16.ReadFrom(data, ref seqPos);
-
-						if (entry.OpCode != OperationCode.Add && entry.OpCode != OperationCode.Update && entry.OpCode != OperationCode.Remove)
-						{
-							valid = false;
-							break;
-						}
-
-						try
-						{
-							entry.Key = _options.KeySerializer.ReadFrom(data, ref seqPos);
-							entry.Value = (entry.OpCode == OperationCode.Remove)
-								? default
-								: _options.ValueSerializer.ReadFrom(data, ref seqPos);
-						}
-						catch
-						{
-							valid = false;
-							break;
-						}
-						if ((seqPos.Equals(end)) != (opCount == 0))
-						{
-							valid = false;
-							break;
-						}
-
-						yield return entry;
+						entry.Key = _options.KeySerializer.ReadFrom(data, ref seqPos);
+						entry.Value = (entry.OpCode == OperationCode.Remove)
+							? default
+							: _options.ValueSerializer.ReadFrom(data, ref seqPos);
 					}
+					catch
+					{
+						valid = false;
+						break;
+					}
+					if ((seqPos.Equals(end)) != (opCount == 0))
+					{
+						valid = false;
+						break;
+					}
+
+					yield return entry;
 				}
 			}
-            finally
-            {
-			    if (buffer != null)
-                    ArrayPool<byte>.Shared.Return(buffer);
-			}
+		}
+        finally
+        {
+			if (buffer != null)
+                ArrayPool<byte>.Shared.Return(buffer);
+		}
 
-            if (!_options.ReadOnly && pos < length)
-                TruncateLog(pos);
-        }
+        if (!_options.ReadOnly && pos < length)
+            TruncateLog(pos);
     }
 
     /// <summary>
