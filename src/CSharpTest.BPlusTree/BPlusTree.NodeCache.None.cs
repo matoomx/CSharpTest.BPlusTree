@@ -21,7 +21,7 @@ partial class BPlusTree<TKey, TValue>
     /// <summary> performs a perfect cache of the entire tree </summary>
     sealed class NodeCacheNone : NodeCacheBase
     {
-        readonly Dictionary<IStorageHandle, ILockStrategy> _list;
+        readonly Dictionary<StorageHandle, ILockStrategy> _list;
         readonly ReaderWriterLocking _lock;
         NodeHandle _root;
 

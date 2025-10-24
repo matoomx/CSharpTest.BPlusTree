@@ -188,7 +188,7 @@ partial class BPlusTree<TKey, TValue>
                 };
         }
 
-        List<IStorageHandle> handles = [];
+        List<StorageHandle> handles = [];
         try
         {
             int counter = 0;
@@ -241,7 +241,7 @@ partial class BPlusTree<TKey, TValue>
         {
             oldRoot?.Dispose();
 
-            foreach(IStorageHandle sh in handles)
+            foreach(StorageHandle sh in handles)
             {
                 try { _storage.Storage.Destroy(sh); }
                 catch (ThreadAbortException) { throw; }
@@ -251,12 +251,12 @@ partial class BPlusTree<TKey, TValue>
         }
     }
 
-    private Node BulkWrite(ICollection<IStorageHandle> handles, ref int counter, IEnumerable<KeyValuePair<TKey, TValue>> itemsEnum)
-    {
-        List<Node> working = [];
-        Node leafNode = null;
-        
-        using (IEnumerator<KeyValuePair<TKey, TValue>> items = itemsEnum.GetEnumerator())
+    private Node BulkWrite(ICollection<StorageHandle> handles, ref int counter, IEnumerable<KeyValuePair<TKey, TValue>> itemsEnum)
+	{
+		List<Node> working = [];
+		Node leafNode = null;
+
+		using (IEnumerator<KeyValuePair<TKey, TValue>> items = itemsEnum.GetEnumerator())
         {
             bool more = items.MoveNext();
             while (more)
@@ -333,7 +333,7 @@ partial class BPlusTree<TKey, TValue>
         return working[0];
     }
 
-    private void InsertWorkingNode(ICollection<IStorageHandle> handles, List<Node> working, int index, Element child)
+    private void InsertWorkingNode(ICollection<StorageHandle> handles, List<Node> working, int index, Element child)
     {
         if(index < 0)
         {

@@ -14,6 +14,7 @@
 #endregion
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -22,72 +23,78 @@ namespace CSharpTest.Collections.Generic;
 /// </summary>
 partial class BTreeMemoryStore : INodeStorage
 {
-    readonly ISerializer<string> _stringSerializer;
-    MyStorageHandle _root;
+    private static readonly StorageHandle InvalidRoot = new(uint.MaxValue, uint.MaxValue);
+    readonly ConcurrentDictionary<StorageHandle, object> _nodes;
+
+    StorageHandle _root = InvalidRoot;
 
     /// <summary> Default in-memory storage </summary>
     public BTreeMemoryStore()
     {
-        _stringSerializer = PrimitiveSerializer.Instance;
-    }
+        _nodes = new();
+	}
 
     public void Dispose()
     {
-        _root = null;
-    }
+        _root = InvalidRoot;
+		_nodes.Clear();
+	}
     
-    public IStorageHandle OpenRoot(out bool isNew)
+    public StorageHandle OpenRoot(out bool isNew)
     {
-        isNew = _root == null;
-        _root ??= new MyStorageHandle("ROOT");
+        if (_root == InvalidRoot)
+        {
+            isNew = true;
+			_root = new StorageHandle(0);
+		}
+        else
+            isNew = false;
+
         return _root;
     }
 
     public void Reset()
     {
-        _root = null;
+        _root = InvalidRoot;
+        _nodes.Clear();
     }
 
-    public bool TryGetNode<TNode>(IStorageHandle handleIn, out TNode node, ISerializer<TNode> serializer)
+    public bool TryGetNode<TNode>(StorageHandle handle, out TNode node, ISerializer<TNode> _)
     {
-        if (handleIn is not MyStorageHandle handle)
-            throw new InvalidNodeHandleException();
-
-		if (handle.Node != null)
+        if (_nodes.TryGetValue(handle, out var n))
         {
-            node = (TNode)handle.Node;
+			node  = (TNode)n;
             return true;
-        }
+		}
+
         node = default;
         return false;
+	}
+
+    [Obsolete("Not supported", true)]
+    void ISerializer<StorageHandle>.WriteTo(StorageHandle handle, IBufferWriter<byte> stream)
+    { 
+        throw new NotSupportedException(); 
     }
 
     [Obsolete("Not supported", true)]
-    void ISerializer<IStorageHandle>.WriteTo(IStorageHandle value, IBufferWriter<byte> stream)
-    { throw new NotSupportedException(); }
-
-    [Obsolete("Not supported", true)]
-    IStorageHandle ISerializer<IStorageHandle>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
-    { throw new NotSupportedException(); }
-
-    public IStorageHandle Create()
-    {
-        return new MyStorageHandle(); 
+    StorageHandle ISerializer<StorageHandle>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
+    { 
+        throw new NotSupportedException(); 
     }
 
-    public void Destroy(IStorageHandle handleIn)
+    public StorageHandle Create()
     {
-		if (handleIn is not MyStorageHandle handle)
-			throw new InvalidNodeHandleException();
-
-		handle.Clear();
+        return new StorageHandle(0); 
     }
 
-    public void Update<T>(IStorageHandle handleIn, ISerializer<T> serializer, T node)
+    public void Destroy(StorageHandle handle)
     {
-		if (handleIn is not MyStorageHandle handle)
-			throw new InvalidNodeHandleException();
-        
-        handle.Node = node;
+        _nodes.TryRemove(handle, out _);
+    }
+
+    public void Update<TNode>(StorageHandle handle, ISerializer<TNode> serializer, TNode node)
+    {
+        _nodes.AddOrUpdate(handle, node, (k,v) => node);
     }
 }

@@ -31,7 +31,7 @@ partial class BPlusTree<TKey, TValue>
         options.ReadOnly = true;
 
 		using INodeStorage store = options.CreateStorage();
-		IStorageHandle hroot = store.OpenRoot(out bool isnew);
+		StorageHandle hroot = store.OpenRoot(out bool isnew);
 		if (isnew)
 			yield break;
 

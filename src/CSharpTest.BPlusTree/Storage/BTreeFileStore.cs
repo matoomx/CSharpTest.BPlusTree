@@ -23,7 +23,7 @@ namespace CSharpTest.Collections.Generic;
 sealed partial class BTreeFileStore : INodeStorage, ITransactable
 {
     private readonly TransactedCompoundFile _file;
-    private readonly FileId _rootId;
+    private readonly StorageHandle _rootId;
     private readonly bool _readonly;
 
 	/// <summary>
@@ -32,7 +32,7 @@ sealed partial class BTreeFileStore : INodeStorage, ITransactable
 	public BTreeFileStore(TransactedCompoundFile.Options options)
     {
         _file = new TransactedCompoundFile(options);
-        _rootId = new FileId(TransactedCompoundFile.FirstIdentity);
+        _rootId = new StorageHandle(TransactedCompoundFile.FirstIdentity);
 		_readonly = options.ReadOnly;
 
         if (options.CreateNew)
@@ -82,7 +82,7 @@ sealed partial class BTreeFileStore : INodeStorage, ITransactable
         CreateRoot(_file);
     }
 
-    public IStorageHandle OpenRoot(out bool isNew)
+    public StorageHandle OpenRoot(out bool isNew)
     {
         using (var s = _file.Read(_rootId.Id))
             isNew = s.Data.IsEmpty;
@@ -90,35 +90,26 @@ sealed partial class BTreeFileStore : INodeStorage, ITransactable
         return _rootId;
     }
 
-    public bool TryGetNode<TNode>(IStorageHandle handleIn, out TNode node, ISerializer<TNode> serializer)
+    public bool TryGetNode<TNode>(StorageHandle handle, out TNode node, ISerializer<TNode> serializer)
     {
-        if (handleIn is not FileId handle)
-            throw new InvalidNodeHandleException();
-
 		using var s = _file.Read(handle.Id);
         var pos = s.Data.Start;
 		node = serializer.ReadFrom(s.Data, ref pos);
 		return true;
 	}
 
-    public IStorageHandle Create()
+    public StorageHandle Create()
     {
-        return new FileId(_file.Create());
+        return new StorageHandle(_file.Create());
 	}
 
-    public void Destroy(IStorageHandle handleIn)
+    public void Destroy(StorageHandle handle)
     {
-       if (handleIn is not FileId handle)
-            throw new InvalidNodeHandleException();
-
 		_file.Delete(handle.Id);
     }
 
-    public void Update<T>(IStorageHandle handleIn, ISerializer<T> serializer, T node)
+    public void Update<TNode>(StorageHandle handle, ISerializer<TNode> serializer, TNode node)
     {
-		if (handleIn is not FileId handle)
-            throw new InvalidNodeHandleException();
-
         if (_readonly)
 			throw new InvalidOperationException("Read only");
 
@@ -129,17 +120,14 @@ sealed partial class BTreeFileStore : INodeStorage, ITransactable
 		_file.Write(handle.Id, ms);
 	}
 
-    void ISerializer<IStorageHandle>.WriteTo(IStorageHandle handleIn, IBufferWriter<byte> stream)
+    void ISerializer<StorageHandle>.WriteTo(StorageHandle handle, IBufferWriter<byte> stream)
     {
-		if (handleIn is not FileId handle)
-			throw new InvalidNodeHandleException();
-
 		PrimitiveSerializer.UInt32.WriteTo(handle.Id, stream);
         PrimitiveSerializer.UInt32.WriteTo(handle.Unique, stream);
     }
 
-    IStorageHandle ISerializer<IStorageHandle>.ReadFrom(ReadOnlySequence<byte> stream , ref SequencePosition position)
+	StorageHandle ISerializer<StorageHandle>.ReadFrom(ReadOnlySequence<byte> stream , ref SequencePosition position)
     {
-        return new FileId(PrimitiveSerializer.UInt32.ReadFrom(stream, ref position), PrimitiveSerializer.UInt32.ReadFrom(stream, ref position)); 
+        return new StorageHandle(PrimitiveSerializer.UInt32.ReadFrom(stream, ref position), PrimitiveSerializer.UInt32.ReadFrom(stream, ref position)); 
     }
 }

@@ -34,9 +34,9 @@ partial class BPlusTree<TKey, TValue>
             _version = new NodeVersion();
         }
 
-        public readonly ISerializer<Node> NodeSerializer;
         public readonly Options Options;
-        public readonly INodeStorage Storage;
+		public readonly ISerializer<Node> NodeSerializer;
+		public readonly INodeStorage Storage;
         public readonly ILockFactory LockFactory;
 
         ~NodeCacheBase()

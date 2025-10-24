@@ -21,7 +21,7 @@ partial class BPlusTree<TKey, TValue>
 	[System.Diagnostics.DebuggerDisplay("RootNode, Handle = {_handle}")]
 	sealed class RootNode : Node
     {
-        public RootNode(IStorageHandle handle) : base(handle, 1)
+        public RootNode(StorageHandle handle) : base(handle, 1)
         { 
             _count = 1; /*invariant for root*/
             _ltype = LockType.Read; /*will be a transacted update, not a create*/

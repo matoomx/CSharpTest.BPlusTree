@@ -203,7 +203,9 @@ partial class BPlusTree<TKey, TValue>
             else
             {
                 Node old = Interlocked.CompareExchange(ref entry.Node, node.Ptr, node.Original);
-				Check.Assert(ReferenceEquals(old, node.Original), "Node was modified without lock");
+
+                if (old != null && node.Original != null)
+				    Check.Assert(ReferenceEquals(old, node.Original), "Node was modified without lock");
             }
         }
     }

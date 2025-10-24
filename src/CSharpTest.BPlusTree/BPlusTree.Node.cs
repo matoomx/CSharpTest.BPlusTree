@@ -22,13 +22,13 @@ partial class BPlusTree<TKey, TValue>
 {
 	class Node
     {
-        private readonly IStorageHandle _handle;
+        private readonly StorageHandle _handle;
         protected readonly Element[] _list;
         protected LockType _ltype;
         protected int _count;
         protected int _version;
 
-        public Node(IStorageHandle handle, int elementCount)
+        public Node(StorageHandle handle, int elementCount)
         {
             _handle = handle;
             _list = new Element[elementCount];
@@ -48,7 +48,7 @@ partial class BPlusTree<TKey, TValue>
             _version = copyFrom._version + 1;
         }
 
-        public static Node FromElements(IStorageHandle handle, bool isRoot, int nodeSize, Element[] items)
+        public static Node FromElements(StorageHandle handle, bool isRoot, int nodeSize, Element[] items)
         {
             if( isRoot)
             {
@@ -65,7 +65,7 @@ partial class BPlusTree<TKey, TValue>
             return node;
         }
 
-        public IStorageHandle StorageHandle { get { return _handle; } }
+        public StorageHandle StorageHandle { get { return _handle; } }
         public bool IsReadOnly { get { return _ltype == LockType.Read; } }
 
         //public void Invalidate()

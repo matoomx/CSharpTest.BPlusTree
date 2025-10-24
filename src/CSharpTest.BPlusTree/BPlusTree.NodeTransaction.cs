@@ -73,7 +73,7 @@ partial class BPlusTree<TKey, TValue>
         { return Create(parent.LockType, isLeaf); }
         public NodePin Create(LockType ltype, bool isLeaf)
         {
-            IStorageHandle storeHandle = _cache.Storage.Create();
+            StorageHandle storeHandle = _cache.Storage.Create();
             NodeHandle handle = new NodeHandle(storeHandle);
 			ILockStrategy lck = _cache.CreateLock(handle, out object refobj);
 

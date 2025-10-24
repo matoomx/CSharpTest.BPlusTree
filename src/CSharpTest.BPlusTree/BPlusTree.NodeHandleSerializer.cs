@@ -20,11 +20,11 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-	sealed class NodeHandleSerializer : ISerializer<NodeHandle>, ISerializer<IStorageHandle>
+	sealed class NodeHandleSerializer : ISerializer<NodeHandle>, ISerializer<StorageHandle>
     {
-        private readonly ISerializer<IStorageHandle> _handleSerializer;
+        private readonly ISerializer<StorageHandle> _handleSerializer;
 
-        public NodeHandleSerializer(ISerializer<IStorageHandle> handleSerializer)
+        public NodeHandleSerializer(ISerializer<StorageHandle> handleSerializer)
         {
             _handleSerializer = handleSerializer;
         }
@@ -35,10 +35,10 @@ partial class BPlusTree<TKey, TValue>
         public NodeHandle ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
         { return new NodeHandle(_handleSerializer.ReadFrom(stream, ref position)); }
 
-        public void WriteTo(IStorageHandle value, IBufferWriter<byte> stream)
+        public void WriteTo(StorageHandle value, IBufferWriter<byte> stream)
         { _handleSerializer.WriteTo(value, stream); }
 
-        IStorageHandle ISerializer<IStorageHandle>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position )
+        StorageHandle ISerializer<StorageHandle>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position )
         { return _handleSerializer.ReadFrom(stream, ref position); }
     }
 }

@@ -23,7 +23,7 @@ partial class BPlusTree<TKey, TValue>
     {
         readonly ISerializer<int> _intSerializer = PrimitiveSerializer.Instance;
         readonly ISerializer<bool> _boolSerializer = PrimitiveSerializer.Instance;
-        private readonly ISerializer<IStorageHandle> _storageHandleSerializer;
+        private readonly ISerializer<StorageHandle> _storageHandleSerializer;
         private readonly NodeHandleSerializer _handleSerializer;
         private readonly Options _options;
         private readonly ISerializer<TKey> _keySerializer;
@@ -89,7 +89,7 @@ partial class BPlusTree<TKey, TValue>
 
         Node ISerializer<Node>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
         {
-            IStorageHandle handle = _storageHandleSerializer.ReadFrom(stream, ref position);
+            StorageHandle handle = _storageHandleSerializer.ReadFrom(stream, ref position);
 
             bool isLeaf = _boolSerializer.ReadFrom(stream, ref position);
             bool isRoot = _boolSerializer.ReadFrom(stream, ref position);
