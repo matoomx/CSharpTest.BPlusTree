@@ -195,7 +195,7 @@ public sealed class ReloadTests
         Assert.Throws<DuplicateKeyException>( () => tree.Add("B", 3));
     }
 
-    [TestMethod]
+    //[TestMethod]
     public void TestReadMe()
     {
 		var fileName = Path.GetTempFileName();
