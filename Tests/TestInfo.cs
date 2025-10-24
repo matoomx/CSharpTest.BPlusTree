@@ -22,7 +22,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace BPlusTreeTests
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct TestInfo
+    struct TestInfo : IEquatable<TestInfo>
     {
         public TestInfo(Guid guid): this()
         {
@@ -35,7 +35,23 @@ namespace BPlusTreeTests
         public long UpdateCount;
         public byte[] RandomBytes;
 
-        public static IEnumerable<KeyValuePair<Guid, TestInfo>> Create(int count)
+		public override bool Equals(object obj)
+		{
+			return obj is TestInfo other && this.Equals(other);
+		}
+
+		public bool Equals(TestInfo other)
+		{
+            return MyKey == other.MyKey;
+        }
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(MyKey);
+		}
+
+
+		public static IEnumerable<KeyValuePair<Guid, TestInfo>> Create(int count)
         { return CreateSet(1, count, null); }
         public static IEnumerable<KeyValuePair<Guid, TestInfo>> Create(int count, IDictionary<Guid, TestInfo> values)
         { return CreateSet(1, count, values); }
