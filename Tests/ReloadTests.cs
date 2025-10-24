@@ -16,20 +16,17 @@ public sealed class ReloadTests
     [TestMethod]
     public void BasicTest()
     {
-        var options = BPlusTree.CreateOptions(PrimitiveSerializer.String, PrimitiveSerializer.Int32);
-        options.CalcBTreeOrder(16, 24);
-        options.CreateFile = CreatePolicy.Always;
-        options.FileName = Path.GetTempFileName();
-        using (var tree = BPlusTree.Create(options))
+        var fileName = Path.GetTempFileName();
+        using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, fileName))
         {
             tree.Add("A", 1);
             tree.Add("B", 2);
             tree.Add("C", 3);
         }
-        options.CreateFile = CreatePolicy.Never;
-        using (var tree = BPlusTree.Create(options))
-        {
-            Assert.AreEqual(1, tree["A"]);
+
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, fileName))
+		{
+			Assert.AreEqual(1, tree["A"]);
             Assert.AreEqual(2, tree["B"]);
             Assert.AreEqual(3, tree["C"]);
         }
@@ -38,18 +35,15 @@ public sealed class ReloadTests
 	[TestMethod]
 	public void BasicTestUtf16()
 	{
-		var options = BPlusTree.CreateOptions(PrimitiveSerializer.StringUtf16, PrimitiveSerializer.Int32);
-		options.CalcBTreeOrder(16, 24);
-		options.CreateFile = CreatePolicy.Always;
-		options.FileName = Path.GetTempFileName();
-		using (var tree = BPlusTree.Create(options))
+        var fileName = Path.GetTempFileName();
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.StringUtf16, PrimitiveSerializer.Int32, fileName, 16, 24))
 		{
 			tree.Add("A", 1);
 			tree.Add("B", 2);
 			tree.Add("C", 3);
 		}
-		options.CreateFile = CreatePolicy.Never;
-		using (var tree = BPlusTree.Create(options))
+
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.StringUtf16, PrimitiveSerializer.Int32, fileName, 16, 24))
 		{
 			Assert.AreEqual(1, tree["A"]);
 			Assert.AreEqual(2, tree["B"]);
@@ -194,16 +188,37 @@ public sealed class ReloadTests
     [TestMethod]
     public void Duplicate()
     {
-        var options = BPlusTree.CreateOptions(PrimitiveSerializer.String, PrimitiveSerializer.Int32);
-        options.CalcBTreeOrder(16, 24);
-        options.CreateFile = CreatePolicy.Always;
-        options.FileName = Path.GetTempFileName();
-        options.EnableCount = true;
-        using var tree = new BPlusTree<string, int>(options)
-        {
-            { "A", 1 },
-            { "B", 2 }
-        };
+        using var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, Path.GetTempFileName(), 16, 24);
+        tree.Add("A", 1);
+        tree.Add("B", 2);
+
         Assert.Throws<DuplicateKeyException>( () => tree.Add("B", 3));
     }
+
+    [TestMethod]
+    public void TestReadMe()
+    {
+		var fileName = Path.GetTempFileName();
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
+		{
+			var tempDir = new DirectoryInfo(Path.GetTempPath());
+			foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
+				tree.Add(file.FullName, file.LastWriteTimeUtc);
+		}
+
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
+		{
+			var tempDir = new DirectoryInfo(Path.GetTempPath());
+			foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
+			{
+				if (!tree.TryGetValue(file.FullName, out DateTime cmpDate))
+					Console.WriteLine("New file: {0}", file.FullName);
+				else if (cmpDate != file.LastWriteTimeUtc)
+					Console.WriteLine("Modified: {0}", file.FullName);
+				tree.Remove(file.FullName);
+			}
+			foreach (var item in tree)
+				Console.WriteLine("Removed: {0}", item.Key);
+		}
+	}
 }
