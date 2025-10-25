@@ -1,3 +1,5 @@
+[![CI](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml/badge.svg)](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml)
+
 CSharpTest.Net.Collections
 =======================
 
