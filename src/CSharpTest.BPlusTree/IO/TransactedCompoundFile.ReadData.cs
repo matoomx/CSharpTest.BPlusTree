@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Buffers;
 
@@ -22,19 +23,17 @@ public sealed partial class TransactedCompoundFile
 	public ref struct ReadData : IDisposable
     {
         private byte[] _rented;
-        private readonly ArrayPool<byte> _pool;
 		private ReadOnlySequence<byte> _data;
-        public ReadData(byte[] rented, ArrayPool<byte> pool, int start = 0)
+
+        public ReadData(byte[] rented, int start = 0)
         {
 			_rented = rented;
-			_pool = pool;
 			_data = new ReadOnlySequence<byte>(rented, start, rented.Length);
 		}
 
-		public ReadData(byte[] rented, ArrayPool<byte> pool, int start, int length)
+		public ReadData(byte[] rented, int start, int length)
 		{
 			_rented = rented;
-			_pool = pool;
 			_data = new ReadOnlySequence<byte>(rented, start, length);
 		}
 
@@ -43,11 +42,13 @@ public sealed partial class TransactedCompoundFile
 
 		public void Dispose()
         {
-			_pool?.Return(_rented);
+			if (_rented?.Length > 0) 
+				ArrayPool<byte>.Shared.Return(_rented);
+
             _rented = null;
 			_data = default;
 		}
 
-        public static ReadData Empty => new ReadData([], null);
+        public static ReadData Empty => new ReadData([], 0);
 	}
 }

@@ -13,6 +13,7 @@
  */
 #endregion
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
@@ -57,15 +58,23 @@ public sealed partial class TransactedCompoundFile
         public static bool TryLoadSection(SafeFileHandle handle, bool alt, int sectionIndex, int blockSize, out FileSection section)
         {
             section = new FileSection(sectionIndex, blockSize, false);
-            byte[] part1 = alt ? new byte[blockSize] : section._blockData;
+            
+            var altBuffer = ArrayPool<byte>.Shared.Rent(blockSize);
 
-            RandomAccess.Read(handle, part1.AsSpan(0, blockSize), section._sectionPosition);
+            try
+            {
+                byte[] part1 = alt ? altBuffer : section._blockData;
+				byte[] part2 = !alt ? altBuffer : section._blockData;
 
-            byte[] part2 = !alt ? new byte[blockSize] : section._blockData;
+				RandomAccess.Read(handle, part1.AsSpan(0, blockSize), section._sectionPosition);
+                RandomAccess.Read(handle, part2.AsSpan(0, blockSize), section._sectionPosition + (section.SectionSize - blockSize));
 
-			RandomAccess.Read(handle, part2.AsSpan(0, blockSize), section._sectionPosition + (section.SectionSize - blockSize));
-
-			section._isDirty = !part1.SequenceEqual(part2);
+                section._isDirty = !part1.SequenceEqual(part2);
+            }
+            finally
+            {
+				ArrayPool<byte>.Shared.Return(altBuffer);
+			}
 
             if (!section.CheckValid())
             {
@@ -129,12 +138,12 @@ public sealed partial class TransactedCompoundFile
                 long position = _sectionPosition + (BlockSize * block.Offset);
                 var byteArrayLength = headerOnly ? BlockHeaderSize : block.ActualBlocks * BlockSize;
 
-                bytes = _bytePool.Rent(byteArrayLength);
+                bytes = ArrayPool<byte>.Shared.Rent(byteArrayLength);
 
                 readBytes = fget(position, bytes, byteArrayLength);
                 if (readBytes < BlockHeaderSize)
                 {
-                    _bytePool.Return(bytes);
+					ArrayPool<byte>.Shared.Return(bytes);
                     throw new InvalidDataException();
                 }
 
@@ -164,19 +173,19 @@ public sealed partial class TransactedCompoundFile
                     ((block.Count < 16 && block.ActualBlocks != block.Count) ||
                      (block.Count == 16 && block.ActualBlocks < 16)))
                 {
-                    _bytePool.Return(bytes);
+					ArrayPool<byte>.Shared.Return(bytes);
                     throw new InvalidDataException();
                 }
 
                 if (block.ActualBlocks != Math.Max(1, (length + headerSize + BlockSize - 1) / BlockSize))
                 {
-                    _bytePool.Return(bytes);
+					ArrayPool<byte>.Shared.Return(bytes);
                     throw new InvalidDataException();
                 }
 
                 if (headerOnly)
                 {
-                    _bytePool.Return(bytes);
+					ArrayPool<byte>.Shared.Return(bytes);
                     return ReadData.Empty;
                 }
 
@@ -186,13 +195,13 @@ public sealed partial class TransactedCompoundFile
                 }
                 if (retry)
                 {
-                    _bytePool.Return(bytes);
+					ArrayPool<byte>.Shared.Return(bytes);
                 }
             } while (retry);
 
             if (readBytes < length + headerSize)
             {
-                _bytePool.Return(bytes);
+				ArrayPool<byte>.Shared.Return(bytes);
                 throw new InvalidDataException();
             }
 
@@ -200,10 +209,10 @@ public sealed partial class TransactedCompoundFile
 
             if (crc != BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(OffsetOfCrc32)))
             {
-                _bytePool.Return(bytes);
+				ArrayPool<byte>.Shared.Return(bytes);
                 throw new InvalidDataException();
             }
-            return new ReadData(bytes, _bytePool, headerSize, length);
+            return new ReadData(bytes, headerSize, length);
         }
 
         public void GetFree(OrdinalList freeHandles, OrdinalList usedBlocks, FGet fget)

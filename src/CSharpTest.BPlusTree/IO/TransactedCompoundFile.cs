@@ -33,7 +33,6 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
     delegate void FPut(long position, ReadOnlySpan<byte> data);
 	delegate void FPutS(long position, SerializeStream data);
 	delegate int FGet(long position, byte[] bytes, int length);
-    private static readonly ArrayPool<byte> _bytePool = ArrayPool<byte>.Shared;
 
     /// <summary>
     /// Returns the first block that *would* be allocated by a call to Create() on an empty file.
