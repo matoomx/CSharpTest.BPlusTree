@@ -1,13 +1,16 @@
-CSharpTest.Net.Collections
+[![CI](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml/badge.svg)](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml)
+
+CSharpTest.BPlusTree
 =======================
 
-CSharpTest.Net.Collections (moved from https://code.google.com/p/csharptest-net/)
+## Background ## 
 
-## Change Log ##
+I first came across this code when I had the same thoughts as CSharpTest http://csharptest.net/482/building-a-database-in-c-part-1/index.html about persisting data from a dictionary. I have not used the original library, but I wanted to test if I could update the code to use new .net APIs that has been released after the original implementation. The major question was, could the library get increased performance with new APIs like RandomAccess and System.Buffers? After some testing on the code the answer seems to be yes. 
 
-2014-09-06	Initial clone and extraction from existing library.
+I have since ported many of the original tests and one benchmark to prove the new implementation to the point that I now don’t know of any issues.
 
-2025-10-22	Fork to reintegrate offline BPlusTree modifications. This will not be compatible with existing data files and use a new storage based upon the v2 format. Some of the changes...
+Some of the changes in this fork..
+*A New storage based upon the v2 format, but not compatible so datafiles needs to be recreated.
 * Use .net 9.
 * Remove all non BPulsTree relevant code.
 * Change Serialization interface to use IBufferWriter and ReadOnlySequence.
@@ -19,10 +22,6 @@ CSharpTest.Net.Collections (moved from https://code.google.com/p/csharptest-net/
 * Use System.IO.Hashing for vectorized CRC checks.
 * Use a single namespace CSharpTest.Collections.Generic so it's easier for clients.
 * More statics so that generic types can be inferred.  
-
-## Online Help ##
-
-BPlusTree Help: http://help.csharptest.net/?CSharpTest.Net.BPlusTree~CSharpTest.Net.Collections.BPlusTree%602.html
 
 ## Performance ##
 
@@ -39,22 +38,28 @@ The new serialization format and the more direct file access uses less memory an
 | Fork_RawDisk_IntGuid     | 1.595 s | 0.0329 s | 0.0960 s |  0.81 |    0.05 |  4000.0000 | 1000.0000 |  34.52 MB |        0.21 |
 
 
+## Online Help for the original implementation ##
+
+BPlusTree Help: http://help.csharptest.net/?CSharpTest.Net.BPlusTree~CSharpTest.Net.Collections.BPlusTree%602.html
+
 ## Quick start ##
 
 
 ### BPlusTree Example ###
 ```
 var fileName = Path.GetTempFileName();
+var tempDir = new DirectoryInfo(Path.GetTempPath());
+
+//Create a BPlusTree with with all temp files and when they where updated and store the data in fileName 
 using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
 {
-	var tempDir = new DirectoryInfo(Path.GetTempPath());
 	foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
 		tree.Add(file.FullName, file.LastWriteTimeUtc);
 }
 
+//Create a new BPlusTree based on the data in fileName and check what files have changed
 using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
 {
-	var tempDir = new DirectoryInfo(Path.GetTempPath());
 	foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
 	{
 		if (!tree.TryGetValue(file.FullName, out DateTime cmpDate))
