@@ -121,76 +121,84 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
     private IEnumerable<T> PagedAndOrdered()
     {
         T[] items = new T[Math.Min(InMemoryLimit, 2048)];
-		using var resources = new DisposingList();
-		var orderedSet = new List<IEnumerable<T>>();
-		int count = 0;
+        var resources = new List<IDisposable>();
+        var orderedSet = new List<IEnumerable<T>>();
+        int count = 0;
 
-		foreach (T item in _unordered)
-		{
-			if (_memoryLimit > 0 && count == _memoryLimit)
-			{
-                if (_serializer != null)
+        try
+        {
+            foreach (T item in _unordered)
+            {
+                if (_memoryLimit > 0 && count == _memoryLimit)
                 {
-                    var temp = new TempFile();
-                    var io = File.OpenHandle(temp.TempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                    long ioPos = 0;
-					resources.Add(temp);
-					resources.Add(io);
+                    if (_serializer != null)
+                    {
+                        var temp = new TempFile();
+                        var io = File.OpenHandle(temp.TempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                        long ioPos = 0;
+                        resources.Add(temp);
+                        resources.Add(io);
 
-                    MergeSort.Sort(items, _comparer);
-                    var buffer = new SerializeStream();
-                    foreach (T i in items)
-                    {	
-                        var sizeHeader = buffer.GetSpan(4);
-                        buffer.Advance(4);
-                        var pos = buffer.Position;
-						_serializer.WriteTo(i, buffer);
-                        BinaryPrimitives.WriteInt32LittleEndian(sizeHeader,(int)(buffer.Position - pos));
-
-                        if (buffer.Position >= 4096)
+                        MergeSort.Sort(items, _comparer);
+                        var buffer = new SerializeStream();
+                        foreach (T i in items)
                         {
-                            RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
-                            ioPos += buffer.Position;
-							buffer.Clear();
+                            var sizeHeader = buffer.GetSpan(4);
+                            buffer.Advance(4);
+                            var pos = buffer.Position;
+                            _serializer.WriteTo(i, buffer);
+                            BinaryPrimitives.WriteInt32LittleEndian(sizeHeader, (int)(buffer.Position - pos));
+
+                            if (buffer.Position >= 4096)
+                            {
+                                RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
+                                ioPos += buffer.Position;
+                                buffer.Clear();
+                            }
                         }
-					}
-                    if (buffer.Position > 0)
-                        RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
+                        if (buffer.Position > 0)
+                            RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
 
-					orderedSet.Add(Read(temp, io));
+                        orderedSet.Add(Read(temp, io));
+                    }
+                    else
+                    {
+                        MergeSort.Sort(items, out T[] copy, 0, items.Length, _comparer);
+                        orderedSet.Add(items);
+                        items = copy;
+                    }
+                    Array.Clear(items, 0, items.Length);
+                    count = 0;
                 }
-                else
-                {
-					MergeSort.Sort(items, out T[] copy, 0, items.Length, _comparer);
-					orderedSet.Add(items);
-					items = copy;
-				}
-				Array.Clear(items, 0, items.Length);
-				count = 0;
-			}
 
-			if (count == items.Length)
-				Array.Resize(ref items, Math.Min(InMemoryLimit, items.Length * 2));
-			items[count++] = item;
+                if (count == items.Length)
+                    Array.Resize(ref items, Math.Min(InMemoryLimit, items.Length * 2));
+                items[count++] = item;
+            }
+
+            if (count != items.Length)
+                Array.Resize(ref items, count);
+
+            MergeSort.Sort(items, _comparer);
+
+            IEnumerable<T> result;
+            if (orderedSet.Count == 0)
+                result = items;
+            else
+            {
+                orderedSet.Add(items);
+                result = Merge(_comparer, orderedSet.ToArray());
+            }
+
+            foreach (T item in result)
+                yield return item;
+        }
+        finally
+        {
+            foreach (var r in resources)
+                r.Dispose();
 		}
-
-		if (count != items.Length)
-			Array.Resize(ref items, count);
-
-		MergeSort.Sort(items, _comparer);
-
-		IEnumerable<T> result;
-		if (orderedSet.Count == 0)
-			result = items;
-		else
-		{
-			orderedSet.Add(items);
-			result = Merge(_comparer, orderedSet.ToArray());
-		}
-
-		foreach (T item in result)
-			yield return item;
-	}
+    }
 
     private IEnumerable<T> Read(TempFile file, SafeFileHandle io)
     {
