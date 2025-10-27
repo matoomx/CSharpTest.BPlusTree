@@ -32,7 +32,7 @@ partial class BPlusTree<TKey, TValue>
         public Element(TKey k, Element value) { Key = k; _child = value._child; }
 
         public bool IsNode { get { return _child is NodeHandle; } }
-        public bool IsValue { get { return !(_child is NodeHandle); } } // Fix for null child value
+        public bool IsValue { get { return _child is not NodeHandle; } } // Fix for null child value
         public bool IsEmpty { get { return _child is null; } }
         public NodeHandle ChildNode { get { return (NodeHandle)_child; } }
         public TValue Payload { get { return (TValue)_child; } }
