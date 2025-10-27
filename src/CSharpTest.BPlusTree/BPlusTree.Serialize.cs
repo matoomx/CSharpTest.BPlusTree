@@ -69,24 +69,6 @@ partial class BPlusTree<TKey, TValue>
             }
         }
 
-        //public IEnumerable<KeyValuePair<TKey, TValue>> RecoverLeaf(ReadOnlySequence<byte> stream, ref SequencePosition position)
-        //{
-        //    _storageHandleSerializer.ReadFrom(stream, ref position);
-        //    bool isLeaf = _boolSerializer.ReadFrom(stream, ref position);
-        //    if (isLeaf)
-        //    {
-        //        /* isRoot */_boolSerializer.ReadFrom(stream, ref position);
-        //        int count = _intSerializer.ReadFrom(stream, ref position);
-
-        //        for (int i = 0; i < count; i++)
-        //        {
-        //            TKey key = _keySerializer.ReadFrom(stream, ref position);
-        //            TValue value = _valueSerializer.ReadFrom(stream, ref position);
-        //            yield return new KeyValuePair<TKey, TValue>(key, value);
-        //        }
-        //    }
-        //}
-
         Node ISerializer<Node>.ReadFrom(ReadOnlySequence<byte> stream, ref SequencePosition position)
         {
             StorageHandle handle = _storageHandleSerializer.ReadFrom(stream, ref position);

@@ -394,48 +394,8 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         }
     }
 
-	/// <summary> Used for enumeration of the storage blocks in the file. </summary>
-	/// <param name="allocatedOnly"> Allows enumeration of all stream, or of just the externally allocated streams </param>
-	/// <param name="verifyReads"> Determines if the checksum should be verified while reading the block bytes </param>
-	/// <param name="ignoreException"> A method that returns true to ignore the exception and continue processing </param>
-	/// <returns>Enumeration of the identity and data stream of each block in the file</returns>
-	//public IEnumerable<KeyValuePair<long, Stream>> ForeachBlock(bool allocatedOnly, bool verifyReads, Converter<Exception, bool> ignoreException)
-	//{
-	//	using (Stream s = _streamCache.Open(FileAccess.ReadWrite))
-	//	using (FileBlock block = new FileBlock(_blockSize, _useAlignedIo))
-	//	{
-	//		long lastBlock = LastAllocated(s);
-	//		for (long blk = lastBlock; blk > 0; blk -= _blockSize)
-	//		{
-	//			s.Position = blk & _maskOffset;
-	//			block.Read(s, FileBlock.HeaderSize);
 
-	//			byte[] bytes;
-	//			try
-	//			{
-	//				if ((block.BlockId & _maskOffset) != blk)
-	//					throw new InvalidDataException();
-	//				if (allocatedOnly && (block.Flags & BlockFlags.ExternalBlock) != BlockFlags.ExternalBlock)
-	//					continue;
-
-	//				using (Stream reader = new BlockStreamReader(this, block.BlockId, BlockFlags.None, verifyReads))
-	//					bytes = IOStream.ReadAllBytes(reader);
-	//			}
-	//			catch (Exception error)
-	//			{
-	//				if (ignoreException != null && ignoreException(error))
-	//					continue;
-	//				throw;
-	//			}
-
-	//			using (Stream ms = new MemoryStream(bytes, false))
-	//				yield return new KeyValuePair<long, Stream>(block.BlockId, ms);
-	//		}
-	//	}
-	//}
-
-
-	private void FreeBlocks(BlockRef block)
+    private void FreeBlocks(BlockRef block)
     {
         int free = (block.Section * BlocksPerSection) + block.Offset;
         if (free > 0)
