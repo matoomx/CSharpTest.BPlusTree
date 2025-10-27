@@ -19,12 +19,16 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Set VERSION variable from tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore --configuration Release
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release
+    - name: Pack
+      run: dotnet pack ./src/CSharpTest.BPlusTree/CSharpTest.BPlusTree.csproj --no-build --configuration Release -p:PackageVersion=${VERSION}
     - name: Upload Release
       uses: ncipollo/release-action@v1.20.0    
       with:
