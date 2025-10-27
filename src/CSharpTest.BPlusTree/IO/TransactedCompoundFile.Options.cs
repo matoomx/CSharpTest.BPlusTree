@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.IO;
 
@@ -24,14 +25,7 @@ public sealed partial class TransactedCompoundFile
 	/// </summary>
 	public class Options : ICloneable
     {
-        private string _filePath;
         private int _blockSize;
-        private FileOptions _fileOptions;
-        private bool _createNew;
-        private bool _commitOnWrite;
-        private bool _commitOnDispose;
-        private LoadingRule _loadingRule;
-        private bool _readOnly;
 
         /// <summary>
         /// Constructs an Options instance
@@ -39,21 +33,14 @@ public sealed partial class TransactedCompoundFile
         /// <param name="filePath">The file name to use</param>
         public Options(string filePath)
         {
-            _filePath = Check.NotNull(filePath);
+			FilePath = Check.NotNull(filePath);
             BlockSize = 4096;
-            _fileOptions = FileOptions.None;
-            _readOnly = false;
-            _createNew = false;
-            _commitOnWrite = false;
-            _loadingRule = LoadingRule.Default;
         }
         /// <summary>
         /// Retrieves the file name that was provided to the constructor
         /// </summary>
-        public string FilePath
-        {
-            get { return _filePath; }
-        }
+        public string FilePath { get; }
+
         /// <summary>
         /// Defines the block-size used for storing data.  Data storred in a given handle must be less than ((16*BlockSize)-8)
         /// </summary>
@@ -80,55 +67,36 @@ public sealed partial class TransactedCompoundFile
         /// <summary>
         /// The FileOptions used for writing to the file
         /// </summary>
-        public FileOptions FileOptions
-        {
-            get { return _fileOptions; }
-            set { _fileOptions = value; }
-        }
+        public FileOptions FileOptions { get; set; } = FileOptions.None;
+
         /// <summary>
         /// Gets or sets a flag that controls if the file is opened in read-only mode.  For ReadOnly
         /// files, another writer may exist; however, changes to the file will not be reflected until
         /// reload.
         /// </summary>
-        public bool ReadOnly
-        {
-            get { return _readOnly; }
-            set { _readOnly = value; }
-        }
+        public bool ReadOnly { get; set; }
+
         /// <summary>
         /// True to create a new file, false to use the existing file.  If this value is false and the
         /// file does not exist an exception will be raised.
         /// </summary>
-        public bool CreateNew
-        {
-            get { return _createNew; }
-            set { _createNew = value; }
-        }
+        public bool CreateNew { get; set; }
+
         /// <summary>
         /// When true every write will rewrite the modified handle(s) back to disk, otherwise the
         /// handle state is kept in memory until a call to commit has been made.
         /// </summary>
-        public bool CommitOnWrite
-        {
-            get { return _commitOnWrite; }
-            set { _commitOnWrite = value; }
-        }
+        public bool CommitOnWrite { get; set; }
+
         /// <summary>
         /// Automatically Commit the storage file when it's disposed.
         /// </summary>
-        public bool CommitOnDispose
-        {
-            get { return _commitOnDispose; }
-            set { _commitOnDispose = value; }
-        }
+        public bool CommitOnDispose { get; set; }
+
         /// <summary>
         /// See comments on the LoadingRule enumerated type and Commit(Action,T)
         /// </summary>
-        public LoadingRule LoadingRule
-        {
-            get { return _loadingRule; }
-            set { _loadingRule = value; }
-        }
+        public LoadingRule LoadingRule { get; set; } = LoadingRule.Default;
 
         object ICloneable.Clone() { return Clone(); }
         /// <summary>

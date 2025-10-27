@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Buffers;
 using System.Buffers.Binary;
@@ -23,7 +24,7 @@ namespace CSharpTest.Collections.Generic;
 
 public sealed partial class TransactedCompoundFile
 {
-	class FileSection
+	sealed class FileSection
     {
         const int _baseOffset = 0;
         readonly int BlockSize;
@@ -55,7 +56,7 @@ public sealed partial class TransactedCompoundFile
         public FileSection(int sectionIndex, int blockSize) : this(sectionIndex, blockSize, true)
         { }
 
-        public static bool TryLoadSection(SafeFileHandle handle, bool alt, int sectionIndex, int blockSize, out FileSection section)
+        public static bool TryLoadSection(SafeFileHandle fileHandle, bool alt, int sectionIndex, int blockSize, out FileSection section)
         {
             section = new FileSection(sectionIndex, blockSize, false);
             
@@ -66,8 +67,8 @@ public sealed partial class TransactedCompoundFile
                 byte[] part1 = alt ? altBuffer : section._blockData;
 				byte[] part2 = !alt ? altBuffer : section._blockData;
 
-				RandomAccess.Read(handle, part1.AsSpan(0, blockSize), section._sectionPosition);
-                RandomAccess.Read(handle, part2.AsSpan(0, blockSize), section._sectionPosition + (section.SectionSize - blockSize));
+				fileHandle.Read(section._sectionPosition, part1.AsSpan(0, blockSize));
+				fileHandle.Read(section._sectionPosition + (section.SectionSize - blockSize), part2.AsSpan(0, blockSize));
 
                 section._isDirty = !part1.SequenceEqual(part2);
             }
@@ -84,21 +85,22 @@ public sealed partial class TransactedCompoundFile
             return true;
         }
 
-        public void SetHandle(FPut fcommit, int index, uint blockId)
+        public void SetHandle(SafeFileHandle fileHandle, int index, uint blockId)
         {
             if (index <= 0 || index >= BlocksPerSection - 1)
                 throw new InvalidDataException();
+            
             WriteUInt32(index, blockId);
             _isDirty = true;
 
-            if (fcommit != null)
+            if (fileHandle != null)
             {
-                Commit(fcommit, false);
-                Commit(fcommit, true);
+                Commit(fileHandle, false);
+                Commit(fileHandle, true);
             }
         }
 
-        public void Commit(FPut put, bool phase2)
+        public void Commit(SafeFileHandle fileHandle, bool phase2)
         {
             if (!_isDirty)
                 return;
@@ -109,13 +111,13 @@ public sealed partial class TransactedCompoundFile
                 MakeValid();
 
             long phaseShift = phase2 ? (SectionSize - BlockSize) : 0;
-            put(_sectionPosition + phaseShift, _blockData);
+            RandomAccess.Write(fileHandle, _blockData, _sectionPosition + phaseShift);
 
             if (phase2)
                 _isDirty = false;
         }
 
-		public void Write(BlockRef block, FPutS fputs, SerializeStream source)
+		public void Write(SafeFileHandle fileHandle, BlockRef block, SerializeStream source)
 		{
             var span = source.GetFirstBlock().Span;
 			//Write the header
@@ -124,10 +126,16 @@ public sealed partial class TransactedCompoundFile
 			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfCrc32), source.CalculateCrc32(BlockHeaderSize));
 			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfBlockCount), (uint)block.ActualBlocks);
 			BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(OffsetOfBlockId), block.Identity);
-			fputs(_sectionPosition + (BlockSize * block.Offset), source);
+
+            var position = _sectionPosition + (BlockSize * block.Offset);
+
+			if (source.IsSingleBlock)
+				RandomAccess.Write(fileHandle, source.GetFirstBlock().Span, position);
+			else
+				RandomAccess.Write(fileHandle, source.GetBlocks(), position);
 		}
 
-		public ReadData Read(BlockRef block, bool headerOnly, FGet fget)
+		public ReadData Read(SafeFileHandle fileHandle, BlockRef block, bool headerOnly)
         {
             bool retry;
             byte[] bytes;
@@ -139,8 +147,8 @@ public sealed partial class TransactedCompoundFile
                 var byteArrayLength = headerOnly ? BlockHeaderSize : block.ActualBlocks * BlockSize;
 
                 bytes = ArrayPool<byte>.Shared.Rent(byteArrayLength);
-
-                readBytes = fget(position, bytes, byteArrayLength);
+                readBytes = fileHandle.Read(position, bytes.AsSpan(0, byteArrayLength));
+                
                 if (readBytes < BlockHeaderSize)
                 {
 					ArrayPool<byte>.Shared.Return(bytes);
@@ -154,19 +162,23 @@ public sealed partial class TransactedCompoundFile
 
                 if(headerSize < BlockHeaderSize)
                 {
-                    throw new InvalidDataException();
+					ArrayPool<byte>.Shared.Return(bytes);
+					throw new InvalidDataException();
                 }
                 if (blockId != block.Identity)
                 {
-                    throw new InvalidDataException();
+					ArrayPool<byte>.Shared.Return(bytes);
+					throw new InvalidDataException();
                 }
                 if (block.Count < 16 && block.ActualBlocks != block.Count)
                 {
-                    throw new InvalidDataException();
+					ArrayPool<byte>.Shared.Return(bytes);
+					throw new InvalidDataException();
                 }
                 if ((block.Count == 16 && block.ActualBlocks < 16))
                 {
-                    throw new InvalidDataException();
+					ArrayPool<byte>.Shared.Return(bytes);
+					throw new InvalidDataException();
                 }
 
                 if (headerSize < BlockHeaderSize || blockId != block.Identity ||
@@ -215,7 +227,7 @@ public sealed partial class TransactedCompoundFile
             return new ReadData(bytes, headerSize, length);
         }
 
-        public void GetFree(OrdinalList freeHandles, OrdinalList usedBlocks, FGet fget)
+        public void GetFree(SafeFileHandle fileHandle, OrdinalList freeHandles, OrdinalList usedBlocks)
         {
             int baseHandle = unchecked(BlocksPerSection * _sectionIndex);
             //reserved: first and last block
@@ -237,7 +249,7 @@ public sealed partial class TransactedCompoundFile
                         long position = (long)BlocksPerSection*BlockSize*block.Section;
                         position += BlockSize*block.Offset;
                         byte[] header = new byte[BlockHeaderSize];
-                        if (BlockHeaderSize != fget(position, header, header.Length))
+                        if (BlockHeaderSize != fileHandle.Read(position, header))
                             throw new InvalidDataException();
                         block.ActualBlocks = (int)BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(OffsetOfBlockCount));
                     }

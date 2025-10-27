@@ -14,7 +14,6 @@
 #endregion
 
 using System;
-using System.Buffers;
 using System.IO;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
@@ -30,15 +29,11 @@ namespace CSharpTest.Collections.Generic;
 public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 {
     enum LoadFrom { FirstBlock, LastBlock, Either }
-    delegate void FPut(long position, ReadOnlySpan<byte> data);
-	delegate void FPutS(long position, SerializeStream data);
-	delegate int FGet(long position, byte[] bytes, int length);
 
     /// <summary>
     /// Returns the first block that *would* be allocated by a call to Create() on an empty file.
     /// </summary>
     public static uint FirstIdentity { get { return 1; } }
-
     public const int BlockHeaderSize = 17; //Header Size + Length + CRC + Block Count + Block Id
     private const int OffsetOfHeaderSize = 0;
     private const int OffsetOfLength = 1;
@@ -50,15 +45,9 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
     readonly int BlockSize;
     readonly int BlocksPerSection;
     readonly long SectionSize;
-
     readonly Lock _sync;
     FileSection[] _sections;
-
     SafeFileHandle _fileHandle;
-    FPut _fcommit;
-    FPut _fput;
-    FPutS _fputS;
-	FGet _fget;
 
     int _firstFreeBlock, _prevFreeBlock, _prevFreeHandle;
     OrdinalList _freeHandles;
@@ -93,10 +82,6 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 			_options.ReadOnly ? FileShare.ReadWrite : FileShare.Read,
 		   _options.FileOptions);
 
-		_fcommit = _fput = WriteSpan;
-		_fputS = WriteSegments;
-		_fget = ReadBytes;
-
         try
         {
             LoadSections(_fileHandle);
@@ -108,24 +93,6 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 			_fileHandle.Dispose();
             throw;
         }
-
-        if (!_options.CommitOnWrite)
-        {
-            _fcommit = null;
-        }
-	}
-
-	private void WriteSpan(long position, ReadOnlySpan<byte> data)
-    {
-		RandomAccess.Write(_fileHandle, data, position);
-    }
-
-	private void WriteSegments(long position, SerializeStream data)
-	{
-        if (data.IsSingleBlock)
-            RandomAccess.Write(_fileHandle, data.GetFirstBlock().Span, position);
-        else
-			RandomAccess.Write(_fileHandle, data.GetBlocks(), position);
 	}
 
 	/// <summary>
@@ -152,14 +119,6 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         }
     }
 
-    private static void FlushStream(Stream stream)
-    {
-		if (stream is not FileStream fs)
-			stream.Flush();
-		else
-			fs.Flush(true);
-	}
-
     /// <summary>
     /// Flushes any pending writes to the disk and returns.
     /// </summary>
@@ -170,6 +129,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         lock (_sync)
 			RandomAccess.FlushToDisk(_fileHandle);
     }
+
     /// <summary>
     /// For file-level transactions, performs a two-stage commit of all changed handles.
     /// </summary>
@@ -177,6 +137,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
     {
         Commit(null, 0);
     }
+
     /// <summary>
     /// For file-level transactions, performs a two-stage commit of all changed handles.
     /// After the first stage has completed, the stageCommit() delegate is invoked.
@@ -198,7 +159,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 
 			//Phase 1 - commit block 0 for each section
 			foreach (var section in _sections)
-                section.Commit(_fput, false);
+                section.Commit(_fileHandle, false);
             
             Flush();
 
@@ -210,7 +171,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
             {
                 //Phase 2 - commit block max for each section and set clean
                 foreach (var section in _sections)
-                    section.Commit(_fput, true);
+                    section.Commit(_fileHandle, true);
                 
                 Flush();
 
@@ -223,6 +184,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
             }
         }
     }
+
     /// <summary>
     /// For file-level transactions, Reloads the file from it's original (or last committed) state.
     /// </summary>
@@ -290,7 +252,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 		};
 
 		foreach (var section in sections)
-            section.GetFree(freeHandles, usedBlocks, _fget);
+            section.GetFree(_fileHandle, freeHandles, usedBlocks);
 
         _sections = sections;
         _freeHandles = freeHandles;
@@ -308,8 +270,8 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         FileSection n = new FileSection(_sections.Length, BlockSize);
         lock (_sync)
         {
-            n.Commit(_fput, false);
-            n.Commit(_fput, true);
+            n.Commit(_fileHandle, false);
+            n.Commit(_fileHandle, true);
         }
 
         FileSection[] grow = new FileSection[_sections.Length + 1];
@@ -402,9 +364,9 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         {
             _firstFreeBlock = Math.Min(_firstFreeBlock, free);
 
-            if(block.ActualBlocks == 16)
+            if (block.ActualBlocks == 16)
             {
-                using (_sections[block.Section].Read(block, true, _fget))
+                using (_sections[block.Section].Read(_fileHandle, block, true))
                 { }
                 if (((block.Count < 16 && block.ActualBlocks != block.Count) ||
                      (block.Count == 16 && block.ActualBlocks < 16)))
@@ -414,19 +376,6 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
             for (int i = 0; i < block.ActualBlocks; i++)
                 _freeBlocks.Add(free + i);
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="position"></param>
-    /// <param name="bytes">Buffer</param>
-    /// <param name="offset"></param>
-    /// <param name="length"></param>
-    /// <returns></returns>
-    private int ReadBytes(long position, byte[] bytes, int length)
-    {
-        return _fileHandle.Read(position, bytes.AsSpan(0, length));
     }
 
 	/// <summary>
@@ -483,8 +432,8 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
 
 		lock (_sync)
 		{
-			_sections[block.Section].Write(block, _fputS, data);
-			_sections[href.Section].SetHandle(_fcommit, href.Offset, blockId);
+			_sections[block.Section].Write(_fileHandle, block, data);
+			_sections[href.Section].SetHandle(_options.CommitOnWrite ?_fileHandle: null, href.Offset, blockId);
 			if (oldblockId != 0)
 				FreeBlocks(new BlockRef(oldblockId, BlockSize));
 		}
@@ -510,7 +459,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
             throw new InvalidDataException();
 
         var block = new BlockRef(blockId, BlockSize);
-        return _sections[block.Section].Read(block, false, _fget);
+        return _sections[block.Section].Read(_fileHandle, block, false);
     }
     /// <summary>
     /// Deletes the handle and frees the associated block space for reuse.
@@ -524,7 +473,7 @@ public sealed partial class TransactedCompoundFile : IDisposable, ITransactable
         uint oldblockId = _sections[href.Section][href.Offset];
         lock (_sync)
         {
-            _sections[href.Section].SetHandle(_fcommit, href.Offset, 0);
+            _sections[href.Section].SetHandle(_options.CommitOnWrite ? _fileHandle : null, href.Offset, 0);
 
             if (oldblockId != 0)
                 FreeBlocks(new BlockRef(oldblockId, BlockSize));
