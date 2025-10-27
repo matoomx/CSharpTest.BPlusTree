@@ -5,12 +5,13 @@ CSharpTest.BPlusTree
 
 ## Background ## 
 
-I first came across this code when I had the same thoughts as CSharpTest http://csharptest.net/482/building-a-database-in-c-part-1/index.html about persisting data from a dictionary. I have not used the original library, but I wanted to test if I could update the code to use new .net APIs that has been released after the original implementation. The major question was, could the library get increased performance with new APIs like RandomAccess and System.Buffers? After some testing on the code the answer seems to be yes. 
+I first came across this code when I had the same thoughts as CSharpTest http://csharptest.net/482/building-a-database-in-c-part-1/index.html about persisting data from a dictionary in a project. The implementation of b+tree with a IDictionary<TKey, TValue> interface seemed perfect, but the requirements changed, and I didn’t end up using CSharpTest.Net.Collections. Now I have once again stumbled upon a solution that may benefit from this library and I looked at it once again but since it is unmaintained I wanted to test if I could simplify it for my needs. I also wanted to test if I could update the code to use new .net APIs that has been released after the original implementation. The major question was, could the library get increased performance with new APIs like RandomAccess and System.Buffers? After some testing on the code the answer seems to be yes.
 
 I have since ported many of the original tests and one benchmark to prove the new implementation to the point that I now don’t know of any issues.
 
-Some of the changes in this fork..
-*A New storage based upon the v2 format, but not compatible so datafiles needs to be recreated.
+Some of the changes in this fork...
+
+* A New storage based upon the v2 format, but not compatible so datafiles needs to be recreated.
 * Use .net 9.
 * Remove all non BPulsTree relevant code.
 * Change Serialization interface to use IBufferWriter and ReadOnlySequence.
