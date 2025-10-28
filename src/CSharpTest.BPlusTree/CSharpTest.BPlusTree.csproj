@@ -3,7 +3,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Description>Fully managed B+ Tree implementation for local data storage. This fork has a modified serialization interface based on System.Buffers/BinaryPrimitives and storage based on RandomAccess</Description>  
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/matoomx/CSharpTest.BPlusTree</RepositoryUrl>
+	<PackageProjectUrl>https://github.com/matoomx/CSharpTest.BPlusTree</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/matoomx/CSharpTest.BPlusTree</RepositoryUrl>
     <PackageTags>BPlusTree</PackageTags>
     <Authors>Roger Knapp, Bjarke Berg, Mattias Törnblom</Authors>	  	  
   </PropertyGroup>
