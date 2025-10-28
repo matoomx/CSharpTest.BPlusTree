@@ -48,18 +48,18 @@ BPlusTree Help: http://help.csharptest.net/?CSharpTest.Net.BPlusTree~CSharpTest.
 
 ### BPlusTree Example ###
 ```
-var fileName = Path.GetTempFileName();
+var dataFile = Path.GetTempFileName();
 var tempDir = new DirectoryInfo(Path.GetTempPath());
 
-//Create a BPlusTree with with all temp files and when they where updated and store the data in fileName 
-using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
+//Create a BPlusTree with with all temp files and when they where updated and use dataFile as storage. 
+using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, dataFile))
 {
 	foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
 		tree.Add(file.FullName, file.LastWriteTimeUtc);
 }
 
-//Create a new BPlusTree based on the data in fileName and check what files have changed
-using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, fileName))
+//Create a new BPlusTree with the previously created dataFile and check what files have changed.
+using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, dataFile))
 {
 	foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
 	{
