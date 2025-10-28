@@ -1,4 +1,5 @@
 [![NuGet](https://img.shields.io/nuget/v/CSharpTest.BPlusTree.svg?color=blue)](https://www.nuget.org/packages/CSharpTest.BPlusTree)
+[![Releases](https://img.shields.io/github/release/matoomx/CSharpTest.BPlusTree.svg?color=blue)](https://github.com/matoomx/CSharpTest.BPlusTree/releases)
 [![CI](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml/badge.svg)](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml)
 
 CSharpTest.BPlusTree
