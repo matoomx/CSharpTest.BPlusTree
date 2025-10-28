@@ -31,5 +31,4 @@ using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializ
 	foreach (var item in tree)
 		Console.WriteLine("Removed: {0}", item.Key);
 }
-}
 ```
