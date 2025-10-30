@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<EnableMSTestRunner>true</EnableMSTestRunner>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MSTest" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\src\CSharpTest.BPlusTree.MemoryPack\CSharpTest.BPlusTree.MemoryPack.csproj" />
+	  <ProjectReference Include="..\..\src\CSharpTest.BPlusTree.MessagePack\CSharpTest.BPlusTree.MessagePack.csproj" />
+	</ItemGroup>
+
+</Project>

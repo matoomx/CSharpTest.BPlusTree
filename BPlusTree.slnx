@@ -1,5 +1,11 @@
 <Solution>
-  <Project Path="Benchmark/CSharpTest.Benchmark.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="Benchmark/CSharpTest.Benchmark.csproj" />
+    <Project Path="Tests/BPlusTreeMemoryPackTests/BPlusTreeMemoryPackTests.csproj" />
+    <Project Path="Tests/BPlusTreeMessagePackTests/BPlusTreeMessagePackTests.csproj" Id="099251e8-fcbe-4222-9668-a0bc2296c1ea" />
+    <Project Path="Tests/BPlusTreeTests/BPlusTreeTests.csproj" />
+  </Folder>
+  <Project Path="src/CSharpTest.BPlusTree.MemoryPack/CSharpTest.BPlusTree.MemoryPack.csproj" />
+  <Project Path="src/CSharpTest.BPlusTree.MessagePack/CSharpTest.BPlusTree.MessagePack.csproj" Id="5a804d1a-bfca-44bc-977e-502b4960f987" />
   <Project Path="src/CSharpTest.BPlusTree/CSharpTest.BPlusTree.csproj" />
-  <Project Path="Tests/BPlusTreeTests.csproj" />
 </Solution>
