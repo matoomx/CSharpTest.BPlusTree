@@ -121,89 +121,77 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
     private IEnumerable<T> PagedAndOrdered()
     {
         T[] items = new T[Math.Min(InMemoryLimit, 2048)];
-        var resources = new List<IDisposable>();
         var orderedSet = new List<IEnumerable<T>>();
         int count = 0;
 
-        try
+        foreach (T item in _unordered)
         {
-            foreach (T item in _unordered)
+            if (_memoryLimit > 0 && count == _memoryLimit)
             {
-                if (_memoryLimit > 0 && count == _memoryLimit)
+                if (_serializer != null)
                 {
-                    if (_serializer != null)
-                    {
-                        var temp = new TempFile();
-                        var io = File.OpenHandle(temp.TempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
-                        long ioPos = 0;
-                        resources.Add(temp);
-                        resources.Add(io);
+                    var tempFile = Path.GetTempFileName();
+					var io = File.OpenHandle(tempFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                    long ioPos = 0;
 
-                        MergeSort.Sort(items, _comparer);
-                        var buffer = new SerializeStream();
-                        foreach (T i in items)
+                    MergeSort.Sort(items, _comparer);
+                    var buffer = new SerializeStream();
+                    foreach (T i in items)
+                    {
+                        var sizeHeader = buffer.GetSpan(4);
+                        buffer.Advance(4);
+                        var pos = buffer.Position;
+                        _serializer.WriteTo(i, buffer);
+                        BinaryPrimitives.WriteInt32LittleEndian(sizeHeader, (int)(buffer.Position - pos));
+
+                        if (buffer.Position >= 4096)
                         {
-                            var sizeHeader = buffer.GetSpan(4);
-                            buffer.Advance(4);
-                            var pos = buffer.Position;
-                            _serializer.WriteTo(i, buffer);
-                            BinaryPrimitives.WriteInt32LittleEndian(sizeHeader, (int)(buffer.Position - pos));
-
-                            if (buffer.Position >= 4096)
-                            {
-                                RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
-                                ioPos += buffer.Position;
-                                buffer.Clear();
-                            }
-                        }
-                        if (buffer.Position > 0)
                             RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
+                            ioPos += buffer.Position;
+                            buffer.Clear();
+                        }
+                    }
+                    if (buffer.Position > 0)
+                        RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
 
-                        orderedSet.Add(Read(temp, io));
-                    }
-                    else
-                    {
-                        MergeSort.Sort(items, out T[] copy, 0, items.Length, _comparer);
-                        orderedSet.Add(items);
-                        items = copy;
-                    }
-                    Array.Clear(items, 0, items.Length);
-                    count = 0;
+                    orderedSet.Add(Read(io, tempFile));
                 }
-
-                if (count == items.Length)
-                    Array.Resize(ref items, Math.Min(InMemoryLimit, items.Length * 2));
-                items[count++] = item;
+                else
+                {
+                    MergeSort.Sort(items, out T[] copy, 0, items.Length, _comparer);
+                    orderedSet.Add(items);
+                    items = copy;
+                }
+                Array.Clear(items, 0, items.Length);
+                count = 0;
             }
 
-            if (count != items.Length)
-                Array.Resize(ref items, count);
-
-            MergeSort.Sort(items, _comparer);
-
-            IEnumerable<T> result;
-            if (orderedSet.Count == 0)
-                result = items;
-            else
-            {
-                orderedSet.Add(items);
-                result = Merge(_comparer, orderedSet.ToArray());
-            }
-
-            foreach (T item in result)
-                yield return item;
+            if (count == items.Length)
+                Array.Resize(ref items, Math.Min(InMemoryLimit, items.Length * 2));
+            items[count++] = item;
         }
-        finally
+
+        if (count != items.Length)
+            Array.Resize(ref items, count);
+
+        MergeSort.Sort(items, _comparer);
+
+        IEnumerable<T> result;
+        if (orderedSet.Count == 0)
+            result = items;
+        else
         {
-            foreach (var r in resources)
-                r.Dispose();
-		}
+            orderedSet.Add(items);
+            result = Merge(_comparer, orderedSet.ToArray());
+        }
+
+        foreach (T item in result)
+            yield return item;
     }
 
-    private IEnumerable<T> Read(TempFile file, SafeFileHandle io)
+    private IEnumerable<T> Read(SafeFileHandle io, string fileName)
     {
-        using (file)
-        using (io)
+        try
         {
             using var buffer = new DeserializeStream(io);
 
@@ -214,7 +202,12 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
 				yield return _serializer.ReadFrom(data, ref pos);
             }
 		}
-    }
+        finally
+        {
+            io.Dispose();
+            File.Delete(fileName);
+		}
+	}
 	#region static Merge(...)
 	/// <summary>
 	/// Merges two ordered enumerations based on the comparer provided.
