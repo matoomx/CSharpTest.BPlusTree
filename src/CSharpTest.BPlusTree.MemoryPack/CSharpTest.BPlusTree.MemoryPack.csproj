@@ -2,11 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <Description>A MemoryPack serializer implementation for CSharpTest.BPlusTree</Description>  
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/matoomx/CSharpTest.BPlusTree</PackageProjectUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>PackageReadMe.md</PackageReadmeFile>
+    <PackageTags>BPlusTree</PackageTags>
+    <Authors>Mattias Törnblom</Authors>	  		  
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CSharpTest.BPlusTree" />
     <PackageReference Include="MemoryPack" />
   </ItemGroup>
-
+  <ItemGroup>
+    <None Include="PackageReadMe.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>	
 </Project>
