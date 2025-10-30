@@ -6,7 +6,7 @@ A B+Tree implementation in C# with an IDictionary<TKey,TValue> interface. Origin
 This fork has a modified serialization interface based on System.Buffers and a new storage implementation bases on RandomAccess. The storage format is not compatible with the original implementation.
 
 ### Example ###
-```
+```csharp
 var dataFile = Path.GetTempFileName();
 var tempDir = new DirectoryInfo(Path.GetTempPath());
 
