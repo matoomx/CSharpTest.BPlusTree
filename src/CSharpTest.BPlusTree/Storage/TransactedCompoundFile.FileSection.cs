@@ -147,7 +147,8 @@ public sealed partial class TransactedCompoundFile
                 var byteArrayLength = headerOnly ? BlockHeaderSize : block.ActualBlocks * BlockSize;
 
                 bytes = ArrayPool<byte>.Shared.Rent(byteArrayLength);
-                readBytes = fileHandle.Read(position, bytes.AsSpan(0, byteArrayLength));
+				//TODO consider reading in smaller chunks for large blocks
+				readBytes = fileHandle.Read(position, bytes.AsSpan(0, byteArrayLength));
                 
                 if (readBytes < BlockHeaderSize)
                 {
