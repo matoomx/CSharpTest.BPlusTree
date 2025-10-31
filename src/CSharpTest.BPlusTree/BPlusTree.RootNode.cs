@@ -37,7 +37,13 @@ partial class BPlusTree<TKey, TValue>
             return true; 
         }
 
-        public override Node CloneForWrite(LockType ltype)
+		public override bool BinarySearch<TAlternate>(IAlternateComparer<TAlternate, TKey> comparer, TAlternate altKey, out int ordinal)
+		{
+			ordinal = 0;
+			return true;
+		}
+
+		public override Node CloneForWrite(LockType ltype)
         {
             if (_ltype == ltype) 
                 return this;
