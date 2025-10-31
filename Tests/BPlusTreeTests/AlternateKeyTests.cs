@@ -24,21 +24,21 @@ public class AlternateKeyTests
 
 			var alternate = tree.GetAlternateLookup(AlternateComparers.StringOrdinal);
 
-			ReadOnlySpan<char> k3 = "three".AsSpan();
-			Assert.AreEqual(3, alternate[k3]);
+			ReadOnlySpan<char> k = "three".AsSpan();
+			Assert.AreEqual(3, alternate[k]);
 
-			ReadOnlySpan<char> k1 = "one".AsSpan();
-			Assert.AreEqual(1, alternate[k1]);
+			k = "one".AsSpan();
+			Assert.AreEqual(1, alternate[k]);
 			
-			ReadOnlySpan<char> k2 = "two".AsSpan();
-			Assert.AreEqual(2, alternate[k2]);
+			k = "two".AsSpan();
+			Assert.AreEqual(2, alternate[k]);
 
-			ReadOnlySpan<char> k2e = "Two".AsSpan();
+			k = "Two".AsSpan();
 
 			bool ex = false;
 			try
 			{
-				var x = alternate[k2e];
+				var x = alternate[k];
 				Assert.Fail("Expected KeyNotFoundException");
 			}
 			catch (IndexOutOfRangeException)
@@ -50,8 +50,7 @@ public class AlternateKeyTests
 
 			var alternate2 = tree.GetAlternateLookup(AlternateComparers.StringOrdinalIgnoreCase);
 
-			Assert.AreEqual(2, alternate2[k2e]);
-
+			Assert.AreEqual(2, alternate2[k]);
 		}
 
 		File.Delete(fileName);
