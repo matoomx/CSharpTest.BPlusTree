@@ -2,10 +2,6 @@
 [![Releases](https://img.shields.io/github/release/matoomx/CSharpTest.BPlusTree.svg?color=blue)](https://github.com/matoomx/CSharpTest.BPlusTree/releases)
 [![CI](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml/badge.svg)](https://github.com/matoomx/CSharpTest.BPlusTree/actions/workflows/dotnet.yml)
 
-[![NuGet](https://img.shields.io/nuget/v/CSharpTest.BPlusTree.MessagePack.svg?color=blue&label=MessagePack%20Serializer)](https://www.nuget.org/packages/CSharpTest.BPlusTree.MessagePack)
-[![NuGet](https://img.shields.io/nuget/v/CSharpTest.BPlusTree.MemoryPack.svg?color=blue&label=MemoryPack%20Serializer)](https://www.nuget.org/packages/CSharpTest.BPlusTree.MemoryPack)
-
-
 CSharpTest.BPlusTree
 =======================
 
@@ -57,7 +53,7 @@ BPlusTree Help: http://help.csharptest.net/?CSharpTest.Net.BPlusTree~CSharpTest.
 var dataFile = Path.GetTempFileName();
 var tempDir = new DirectoryInfo(Path.GetTempPath());
 
-//Create a BPlusTree with with all temp files and when they where updated and use dataFile as storage. 
+//Create a BPlusTree with with string key and datetime as value. Fill it with info of all temp files and when they where updated and use dataFile as storage. 
 using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.DateTime, dataFile))
 {
 	foreach (var file in tempDir.GetFiles("*", SearchOption.AllDirectories))
@@ -79,3 +75,20 @@ using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializ
 		Console.WriteLine("Removed: {0}", item.Key);
 }
 ```
+## Serializers ##
+
+A BPlusTree instance needs serializers to store and retrieve data. The library has built in serializers for common types like int, long, string (both utf8 and utf16). The built in seralizers can be found in PrimitiveSerializer. To simplify usage of MessagePack or MemoryPack as serializers separate libraries are provided.
+
+[![NuGet](https://img.shields.io/nuget/v/CSharpTest.BPlusTree.MessagePack.svg?color=blue&label=MessagePack%20Serializer)](https://www.nuget.org/packages/CSharpTest.BPlusTree.MessagePack)
+[![NuGet](https://img.shields.io/nuget/v/CSharpTest.BPlusTree.MemoryPack.svg?color=blue&label=MemoryPack%20Serializer)](https://www.nuget.org/packages/CSharpTest.BPlusTree.MemoryPack)
+
+To implement your own serializer you need to implement the ISerializer interface.
+
+```csharp
+public interface ISerializer<T>
+{
+	void WriteTo(T value, IBufferWriter<byte> writer);
+	T ReadFrom(ReadOnlySequence<byte> data, ref SequencePosition position);
+}
+```
+When you implement a serializer you need to read and write the same amount of data to keep it in sync. To simplify this process, you can inherit from SizePrefixedSerializerBase<T> and just implement the abstract methods Serialize and Deseraialize. SizePrefixedSerializerBase will add a 4-byte size header before the serialized data, so it knows how much data that needs to be deserialized.
