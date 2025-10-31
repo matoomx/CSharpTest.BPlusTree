@@ -13,7 +13,7 @@ public class AlternateKeyTests
 	public void StringKeyReadWithReadonlySpanTest()
 	{
 		var fileName = Path.GetTempFileName();
-		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, AlternateComparers.StringOrdinal, fileName ))
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, fileName ))
 		{
 			tree.Add("one", 1);
 			tree.Add("two", 2);

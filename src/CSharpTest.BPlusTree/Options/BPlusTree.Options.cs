@@ -52,17 +52,14 @@ public partial class BPlusTree<TKey, TValue>
         private int _keepAliveMaxHistory = 100;
         private int _keepAliveTimeout = 60000;
 
-        public Options(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer): this(keySerializer, valueSerializer, Comparer<TKey>.Default)
-        { }
-
         /// <summary>
         /// Constructs the options configuration to initialize a BPlusTree instance
         /// </summary>
-        public Options(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer, IComparer<TKey> comparer)
+        public Options(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer, IComparer<TKey> comparer = null)
         {
             _keySerializer = Check.NotNull(keySerializer);
             _valueSerializer = Check.NotNull(valueSerializer);
-            KeyComparer = comparer;
+            KeyComparer = comparer ?? ((typeof(TKey) == typeof(string)) ? (IComparer<TKey>)(IComparer<string>)AlternateComparers.StringOrdinal : Comparer<TKey>.Default);
         }
 
         /// <summary> Accesses the key serializer given to the constructor </summary>
@@ -72,7 +69,7 @@ public partial class BPlusTree<TKey, TValue>
         public ISerializer<TValue> ValueSerializer { get { return _valueSerializer; } }
 
         /// <summary> Defines a custom IComparer&lt;T> to be used for comparing keys </summary>
-        public IComparer<TKey> KeyComparer { get; set; } = Comparer<TKey>.Default; 
+        public IComparer<TKey> KeyComparer { get; set; } 
 
 		/// <summary>
 		/// Returns the DurabilityProtection of the underlying storage to create.
