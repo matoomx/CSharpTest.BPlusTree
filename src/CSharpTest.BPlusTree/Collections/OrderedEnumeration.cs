@@ -20,19 +20,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace CSharpTest.Collections.Generic;
 
-/// <summary> Defines how duplicate keys are handled </summary>
-public enum DuplicateHandling
-{
-    /// <summary> Do nothing and pass-through all duplicates </summary>
-    None = 0,
-    /// <summary> Remove all but the first item of duplicates </summary>
-    FirstValueWins,
-    /// <summary> Remove all but the last item of duplicates </summary>
-    LastValueWins,
-    /// <summary> Throw an error on duplicates </summary>
-    RaisesException,
-}
-
 /// <summary>
 /// Creates an ordered enumeration from an unordered enumeration by paginating the data, sorting the page,
 /// and then performing a binary-tree grouped mergesort on the resulting pages.  When the page size (memoryLimit)
@@ -43,10 +30,6 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
     private const int DefaultLimit = 0x10000;
     private const int LimitMax = int.MaxValue;
     private readonly IEnumerable<T> _unordered;
-    private IComparer<T> _comparer;
-    private ISerializer<T> _serializer;
-    private int _memoryLimit;
-    private DuplicateHandling _duplicateHandling;
     private bool _enumerated;
 
     /// <summary> Constructs an ordered enumeration from an unordered enumeration </summary>
@@ -59,47 +42,42 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
     public OrderedEnumeration(IComparer<T> comparer, IEnumerable<T> unordered, ISerializer<T> serializer, int memoryLimit)
     {
         _enumerated = false;
-        _comparer = comparer;
-        _unordered = unordered;
-        _serializer = serializer;
-        _memoryLimit = Check.InRange(memoryLimit, 1, LimitMax);
-        _duplicateHandling = DuplicateHandling.None;
+        Comparer = comparer;
+		_unordered = unordered;
+        Serializer = serializer;
+        InMemoryLimit = Check.InRange(memoryLimit, 1, LimitMax);
     }
 
     /// <summary>
-    /// Gets or sets the comparer to use when ordering the items.
+    /// Gets the comparer to use when ordering the items.
     /// </summary>
     public IComparer<T> Comparer
     {
-        get { return _comparer; }
-        set { _comparer = value ?? Comparer<T>.Default; }
-    }
+        get;init;
+	}
 
     /// <summary>
-    /// Gets or sets the serializer to use when paging to disk.
+    /// Gets the serializer to use when paging to disk.
     /// </summary>
     public ISerializer<T> Serializer
     {
-        get { return _serializer; }
-        set { _serializer = value; }
+        get; init;
     }
 
     /// <summary>
-    /// Gets or sets the number of instances to keep in memory before sorting/paging to disk.
+    /// Gets the number of instances to keep in memory before sorting/paging to disk.
     /// </summary>
     /// <exception cref="System.InvalidOperationException">You must specify the Serializer before setting this property</exception>
     public int InMemoryLimit
     {
-        get { return _memoryLimit; }
-        set { _memoryLimit = Check.InRange(value, 1, LimitMax); }
-    }
+        get;init;
+	}
 
-    /// <summary> Gets or sets the duplicate item handling policy </summary>
+    /// <summary> Gets the duplicate item handling policy </summary>
     public DuplicateHandling DuplicateHandling
     {
-        get { return _duplicateHandling; }
-        set { _duplicateHandling = value; }
-    }
+        get; init;
+    } = DuplicateHandling.None;
 
     /// <summary>
     /// Returns an enumerator that iterates through the collection.
@@ -112,7 +90,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
         if (_enumerated)
             throw new InvalidOperationException();
         _enumerated = true;
-        return new OrderedEnumerator(PagedAndOrdered(), _comparer, _duplicateHandling);
+        return new OrderedEnumerator(PagedAndOrdered(), Comparer, DuplicateHandling);
     }
 
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
@@ -126,22 +104,22 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
 
         foreach (T item in _unordered)
         {
-            if (_memoryLimit > 0 && count == _memoryLimit)
+            if (InMemoryLimit > 0 && count == InMemoryLimit)
             {
-                if (_serializer != null)
+                if (Serializer != null)
                 {
                     var tempFile = Path.GetTempFileName();
 					var io = File.OpenHandle(tempFile, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
                     long ioPos = 0;
 
-                    MergeSort.Sort(items, _comparer);
+                    MergeSort.Sort(items, Comparer);
                     var buffer = new SerializeStream();
                     foreach (T i in items)
                     {
                         var sizeHeader = buffer.GetSpan(4);
                         buffer.Advance(4);
                         var pos = buffer.Position;
-                        _serializer.WriteTo(i, buffer);
+                        Serializer.WriteTo(i, buffer);
                         BinaryPrimitives.WriteInt32LittleEndian(sizeHeader, (int)(buffer.Position - pos));
 
                         if (buffer.Position >= 4096)
@@ -158,7 +136,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
                 }
                 else
                 {
-                    MergeSort.Sort(items, out T[] copy, 0, items.Length, _comparer);
+                    MergeSort.Sort(items, out T[] copy, 0, items.Length, Comparer);
                     orderedSet.Add(items);
                     items = copy;
                 }
@@ -174,7 +152,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
         if (count != items.Length)
             Array.Resize(ref items, count);
 
-        MergeSort.Sort(items, _comparer);
+        MergeSort.Sort(items, Comparer);
 
         IEnumerable<T> result;
         if (orderedSet.Count == 0)
@@ -182,7 +160,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
         else
         {
             orderedSet.Add(items);
-            result = Merge(_comparer, orderedSet.ToArray());
+            result = Merge(Comparer, orderedSet.ToArray());
         }
 
         foreach (T item in result)
@@ -195,11 +173,11 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
         {
             using var buffer = new DeserializeStream(io);
 
-            for (int i = 0; i < _memoryLimit; i++)
+            for (int i = 0; i < InMemoryLimit; i++)
             {
 				var data = buffer.Read();
 				var pos = data.Start;
-				yield return _serializer.ReadFrom(data, ref pos);
+				yield return Serializer.ReadFrom(data, ref pos);
             }
 		}
         finally
@@ -208,7 +186,7 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
             File.Delete(fileName);
 		}
 	}
-	#region static Merge(...)
+
 	/// <summary>
 	/// Merges two ordered enumerations based on the comparer provided.
 	/// </summary>
@@ -270,90 +248,6 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
             Merge(comparer, start + half, count - half, enums)
         );
     }
-    #endregion
-
-    private class OrderedEnumerator : IEnumerator<T>
-    {
-        private readonly IEnumerable<T> _ordered;
-        private IEnumerator<T> _enumerator;
-        private readonly IComparer<T> _comparer;
-        private readonly DuplicateHandling _duplicateHandling;
-
-        private bool _isValid, _hasNext, _isFirst;
-        private T _current;
-        private T _next;
-
-        public OrderedEnumerator(
-            IEnumerable<T> enumerator,
-            IComparer<T> comparer,
-            DuplicateHandling duplicateHandling)
-        {
-            _ordered = enumerator;
-            _enumerator = null;
-            _comparer = comparer;
-            _duplicateHandling = duplicateHandling;
-            _isFirst = true;
-        }
-
-        public void Dispose()
-        {
-            _enumerator?.Dispose();
-            _enumerator = null;
-        }
-
-        public bool MoveNext()
-        {
-            if (_isFirst)
-            {
-                _isFirst = false;
-                _enumerator = _ordered.GetEnumerator();
-                _hasNext = _enumerator.MoveNext();
-                if (_hasNext)
-                    _next = _enumerator.Current;
-            }
-            _isValid = _hasNext;
-            _current = _next;
-
-            if (!_isValid)
-                return false;
-
-// ReSharper disable RedundantBoolCompare
-            while ((_hasNext = _enumerator.MoveNext()) == true)
-// ReSharper restore RedundantBoolCompare
-            {
-                _next = _enumerator.Current;
-                int cmp = _comparer.Compare(_current, _next);
-                if (cmp > 0)
-                    throw new InvalidDataException("Enumeration out of sequence.");
-                if (cmp != 0 || _duplicateHandling == DuplicateHandling.None)
-                    break;
-
-                if (_duplicateHandling == DuplicateHandling.RaisesException)
-                    throw new ArgumentException("Duplicate item in enumeration.");
-                if (_duplicateHandling == DuplicateHandling.LastValueWins)
-                    _current = _next;
-            }
-            if (!_hasNext)
-                _next = default;
-
-            return true;
-        }
-
-        public T Current
-        {
-            get
-            {
-                if (!_isValid)
-                    throw new InvalidOperationException();
-                return _current;
-            }
-        }
-
-        object System.Collections.IEnumerator.Current { get { return Current; } }
-
-        void System.Collections.IEnumerator.Reset()
-        { throw new NotSupportedException(); }
-    }
 
     /// <summary>
     /// Wraps an existing enumeration of Key/value pairs with an assertion about ascending order and handling
@@ -363,29 +257,5 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
         IEnumerable<T> items, IComparer<T> comparer, DuplicateHandling duplicateHandling)
     {
         return new EnumWithDuplicateKeyHandling(items, comparer, duplicateHandling);
-    }
-
-    private class EnumWithDuplicateKeyHandling : IEnumerable<T>
-    {
-        private readonly IEnumerable<T> _items;
-        private readonly IComparer<T> _comparer;
-        private readonly DuplicateHandling _duplicateHandling;
-
-        public EnumWithDuplicateKeyHandling(IEnumerable<T> items, IComparer<T> comparer, DuplicateHandling duplicateHandling)
-        {
-            _items = items;
-            _comparer = comparer;
-            _duplicateHandling = duplicateHandling;
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            return new OrderedEnumerator(_items, _comparer, _duplicateHandling);
-        }
-        [Obsolete]
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
     }
 }

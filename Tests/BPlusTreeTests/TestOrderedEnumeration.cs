@@ -164,18 +164,18 @@ public class TestOrderedEnumeration
         var ordered = new OrderedEnumeration<byte>(Comparer<byte>.Default, FailBeforeYield<byte>(true));
 
         Assert.IsTrue(ReferenceEquals(Comparer<byte>.Default, ordered.Comparer));
-        ordered.Comparer = new ReverseOrder<byte>(ordered.Comparer);
-        Assert.IsTrue(ordered.Comparer is ReverseOrder<byte>);
+        //ordered.Comparer = new ReverseOrder<byte>(ordered.Comparer);
+        //Assert.IsTrue(ordered.Comparer is ReverseOrder<byte>);
 
         Assert.IsNull(ordered.Serializer);
-        ordered.Serializer = PrimitiveSerializer.Byte;
-        Assert.IsTrue(ReferenceEquals(ordered.Serializer, PrimitiveSerializer.Byte));
+        //ordered.Serializer = PrimitiveSerializer.Byte;
+        //Assert.IsTrue(ReferenceEquals(ordered.Serializer, PrimitiveSerializer.Byte));
 
         Assert.AreEqual(0x10000, ordered.InMemoryLimit);
-        Assert.AreEqual(10, ordered.InMemoryLimit = 10);
+        //Assert.AreEqual(10, ordered.InMemoryLimit = 10);
 
         Assert.AreEqual(DuplicateHandling.None, ordered.DuplicateHandling);
-        Assert.AreEqual(DuplicateHandling.FirstValueWins, ordered.DuplicateHandling = DuplicateHandling.FirstValueWins);
+        //Assert.AreEqual(DuplicateHandling.FirstValueWins, ordered.DuplicateHandling = DuplicateHandling.FirstValueWins);
     }
 
     [TestMethod]
