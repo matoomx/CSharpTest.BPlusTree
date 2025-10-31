@@ -4,20 +4,23 @@ namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-	public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>(IAlternateComparer<TAlternateKey, TKey> comparer) where TAlternateKey : allows ref struct
+	public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>() where TAlternateKey : allows ref struct
 	{
-		ArgumentNullException.ThrowIfNull(comparer, nameof(comparer));
-		return new AlternateLookup<TAlternateKey>(this, comparer);
+		return new AlternateLookup<TAlternateKey>(this);
 	}
 
 	public readonly struct AlternateLookup<TAlternateKey> where TAlternateKey : allows ref struct
 	{
 		readonly IAlternateComparer<TAlternateKey, TKey> _comparer;
 
-		internal AlternateLookup(BPlusTree<TKey, TValue> dictionary, IAlternateComparer<TAlternateKey, TKey> comparer)
+		internal AlternateLookup(BPlusTree<TKey, TValue> dictionary)
 		{
 			BPlusTree = dictionary;
-			_comparer = comparer;
+			_comparer = (IAlternateComparer<TAlternateKey, TKey>)dictionary._keyComparer;
+
+			if (_comparer == null)
+				throw new InvalidOperationException("The BPlusTree was not constructed with an IAlternateComparer thst is comatible.");
+
 		}
 
 		public BPlusTree<TKey, TValue> BPlusTree { get; }

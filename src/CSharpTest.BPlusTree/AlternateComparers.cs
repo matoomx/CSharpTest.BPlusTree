@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -11,16 +8,26 @@ public interface IAlternateComparer<in TAlternate, TKey> where TAlternate : allo
 	int Compare(TKey x, TAlternate y);
 }
 
-public sealed class StringAlternateOrdinalIgnoreCase : IAlternateComparer<ReadOnlySpan<char>, string>
+public sealed class StringOrdinalIgnoreCase : IComparer<string>, IAlternateComparer<ReadOnlySpan<char>, string>
 {
+	public int Compare(string x, string y)
+	{
+		return string.Compare(x, y, StringComparison.OrdinalIgnoreCase);
+	}
+
 	public int Compare(string x, ReadOnlySpan<char> y)
 	{
 		return x.AsSpan().CompareTo(y, StringComparison.OrdinalIgnoreCase);
 	}
 }
 
-public sealed class StringAlternateOrdinal : IAlternateComparer<ReadOnlySpan<char>, string>
+public sealed class StringOrdinal : IComparer<string>, IAlternateComparer<ReadOnlySpan<char>, string>
 {
+	public int Compare(string x, string y)
+	{
+		return string.Compare(x, y, StringComparison.Ordinal);
+	}
+
 	public int Compare(string x, ReadOnlySpan<char> y)
 	{
 		return x.AsSpan().CompareTo(y, StringComparison.Ordinal);
@@ -29,6 +36,6 @@ public sealed class StringAlternateOrdinal : IAlternateComparer<ReadOnlySpan<cha
 
 public static class AlternateComparers
 {
-	public static readonly StringAlternateOrdinalIgnoreCase StringOrdinalIgnoreCase = new();
-	public static readonly StringAlternateOrdinal StringOrdinal = new();
+	public static readonly StringOrdinalIgnoreCase StringOrdinalIgnoreCase = new();
+	public static readonly StringOrdinal StringOrdinal = new();
 }
