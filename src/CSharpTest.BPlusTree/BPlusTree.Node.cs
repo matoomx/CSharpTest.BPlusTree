@@ -23,7 +23,7 @@ partial class BPlusTree<TKey, TValue>
 	class Node
     {
         private readonly StorageHandle _handle;
-        protected readonly Element[] _list;
+        protected readonly Element[] _items;
         protected LockType _ltype;
         protected int _count;
         protected int _version;
@@ -31,7 +31,7 @@ partial class BPlusTree<TKey, TValue>
         public Node(StorageHandle handle, int elementCount)
         {
             _handle = handle;
-            _list = new Element[elementCount];
+            _items = new Element[elementCount];
             _ltype = LockType.Insert;
             _count = 0;
         }
@@ -39,7 +39,7 @@ partial class BPlusTree<TKey, TValue>
         protected Node(Node copyFrom, LockType type)
         {
             _handle = copyFrom._handle;
-            _list = (Element[])copyFrom._list.Clone();
+            _items = (Element[])copyFrom._items.Clone();
             _count = copyFrom._count;
             _ltype = type;
             if (_ltype == LockType.Update && !IsLeaf)
@@ -54,12 +54,12 @@ partial class BPlusTree<TKey, TValue>
             {
                 RootNode root = new RootNode(handle);
                 Check.Assert(items.Length == 1, "Wrong element count for root");
-                root._list[0] = items[0];
+                root._items[0] = items[0];
                 return root;
             }
 
             Node node = new Node(handle, nodeSize);
-            Array.Copy(items, 0, node._list, 0, items.Length);
+            Array.Copy(items, 0, node._items, 0, items.Length);
             node._count = items.Length;
             node._ltype = LockType.Read;
             return node;
@@ -91,20 +91,20 @@ partial class BPlusTree<TKey, TValue>
             return new Node(this, ltype);
         }
 
-        public Element this[int ordinal] { get { return _list[ordinal]; } }
+        public Element this[int ordinal] { get { return _items[ordinal]; } }
 
         public int Count { get { return _count; } }
 
-        public int Size { get { return _list.Length; } }
+        public int Size { get { return _items.Length; } }
 
-        public bool IsLeaf { get { return _count == 0 || _list[0].IsNode == false; } }
+        public bool IsLeaf { get { return _count == 0 || _items[0].IsNode == false; } }
         
         public virtual bool IsRoot { get { return false; } }
 
         public virtual bool BinarySearch(IComparer<Element> comparer, Element find, out int ordinal)
         {
-            int start = _count == 0 || _list[0].IsValue ? 0 : 1;
-            ordinal = Array.BinarySearch(_list, start, _count - start, find, comparer);
+            int start = _count == 0 || _items[0].IsValue ? 0 : 1;
+            ordinal = Array.BinarySearch(_items, start, _count - start, find, comparer);
             if (ordinal < 0)
             {
                 ordinal = ~ordinal;
@@ -129,20 +129,20 @@ partial class BPlusTree<TKey, TValue>
             Check.Assert(_ltype != LockType.Read, "Node is currently read-only");
             Check.Assert(ordinal >= 0 && ordinal < _count, "Index out of range.");
 
-            if (comparer == null || comparer.Compare(minKey, _list[ordinal].Key) != 0)
-                _list[ordinal] = new Element(minKey, _list[ordinal]);
+            if (comparer == null || comparer.Compare(minKey, _items[ordinal].Key) != 0)
+                _items[ordinal] = new Element(minKey, _items[ordinal]);
         }
 
         public void ReplaceChild(int ordinal, NodeHandle original, NodeHandle value)
         {
             Check.Assert(_ltype != LockType.Read, "Node is currently read-only");
             Check.Assert(ordinal >= 0 && ordinal < _count, "Index out of range.");
-            Element replacing = _list[ordinal];
+            Element replacing = _items[ordinal];
             Check.Assert(
                 (original == null && replacing.ChildNode == null) ||
                 (original != null && original.Equals(replacing.ChildNode))
                 , "Incorrect child being replaced.");
-            _list[ordinal] = new Element(replacing.Key, value);
+            _items[ordinal] = new Element(replacing.Key, value);
         }
 
         public void SetValue(int ordinal, TKey key, TValue value, IComparer<TKey> comparer)
@@ -150,21 +150,21 @@ partial class BPlusTree<TKey, TValue>
             Check.Assert(!IsRoot, "Invalid operation on root.");
             Check.Assert(_ltype != LockType.Read, "Node is currently read-only");
             Check.Assert(ordinal >= 0 && ordinal < _count, "Index out of range.");
-            Check.Assert(comparer.Compare(_list[ordinal].Key, key) == 0, "Incorrect key for value replacement.");
-            _list[ordinal] = new Element(key, value);
+            Check.Assert(comparer.Compare(_items[ordinal].Key, key) == 0, "Incorrect key for value replacement.");
+            _items[ordinal] = new Element(key, value);
         }
 
         public void Insert(int ordinal, Element item)
         {
             Check.Assert(!IsRoot, "Invalid operation on root.");
             Check.Assert(_ltype != LockType.Read, "Node is currently read-only");
-            if (ordinal < 0 || ordinal > _count || ordinal >= _list.Length)
+            if (ordinal < 0 || ordinal > _count || ordinal >= _items.Length)
                 throw new ArgumentOutOfRangeException(nameof(ordinal));
 
             if (ordinal < _count)
-                Array.Copy(_list, ordinal, _list, ordinal + 1, _count - ordinal);
+                Array.Copy(_items, ordinal, _items, ordinal + 1, _count - ordinal);
 
-            _list[ordinal] = item;
+            _items[ordinal] = item;
 
             _count++;
         }
@@ -177,19 +177,19 @@ partial class BPlusTree<TKey, TValue>
             if (ordinal < 0 || ordinal >= _count)
 				throw new ArgumentOutOfRangeException(nameof(ordinal));
 
-			Check.Assert<InvalidOperationException>(comparer.Compare(_list[ordinal].Key, item.Key) == 0);
+			Check.Assert<InvalidOperationException>(comparer.Compare(_items[ordinal].Key, item.Key) == 0);
 
             if (ordinal < _count - 1)
-                Array.Copy(_list, ordinal + 1, _list, ordinal, _count - ordinal - 1);
+                Array.Copy(_items, ordinal + 1, _items, ordinal, _count - ordinal - 1);
 
             _count--;
-            _list[_count] = new Element();
+            _items[_count] = new Element();
         }
 
         /// <summary> For enumeration </summary>
         public void CopyTo(Element[] elements, out int currentLimit)
         {
-            _list.CopyTo(elements, 0);
+            _items.CopyTo(elements, 0);
             currentLimit = _count;
         }
     }
