@@ -1,13 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace CSharpTest.Collections.Generic;
-
-
-public interface IAlternateComparer<in TAlternate, TKey> where TAlternate : allows ref struct where TKey : allows ref struct
-{
-	int Compare(TKey x, TAlternate y);
-}
 
 partial class BPlusTree<TKey, TValue>
 {

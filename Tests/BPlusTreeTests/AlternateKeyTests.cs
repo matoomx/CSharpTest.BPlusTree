@@ -22,7 +22,7 @@ public class AlternateKeyTests
 			Assert.AreEqual(2, tree["two"]);
 			Assert.AreEqual(3, tree["three"]);
 
-			var alternate = tree.GetAlternateLookup(new StringKeyAlternate());
+			var alternate = tree.GetAlternateLookup(AlternateComparers.StringOrdinal);
 
 			ReadOnlySpan<char> k3 = "three".AsSpan();
 			Assert.AreEqual(3, alternate[k3]);
@@ -32,17 +32,29 @@ public class AlternateKeyTests
 			
 			ReadOnlySpan<char> k2 = "two".AsSpan();
 			Assert.AreEqual(2, alternate[k2]);
+
+			ReadOnlySpan<char> k2e = "Two".AsSpan();
+
+			bool ex = false;
+			try
+			{
+				var x = alternate[k2e];
+				Assert.Fail("Expected KeyNotFoundException");
+			}
+			catch (IndexOutOfRangeException)
+			{
+				ex = true;
+			}
+
+			Assert.IsTrue(ex, "Expected KeyNotFoundException was not thrown");
+
+			var alternate2 = tree.GetAlternateLookup(AlternateComparers.StringOrdinalIgnoreCase);
+
+			Assert.AreEqual(2, alternate2[k2e]);
+
 		}
 
 		File.Delete(fileName);
-	}
-}
-
-public class StringKeyAlternate : IAlternateComparer<ReadOnlySpan<char>, string>
-{
-	public int Compare(string x, ReadOnlySpan<char> y)
-	{
-		return x.AsSpan().CompareTo(y, StringComparison.OrdinalIgnoreCase);
 	}
 }
 
