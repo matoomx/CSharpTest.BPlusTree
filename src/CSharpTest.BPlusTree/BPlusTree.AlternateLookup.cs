@@ -36,25 +36,37 @@ partial class BPlusTree<TKey, TValue>
 			}
 		}
 
-		public bool TryGetValue(TAlternateKey key, out TValue value)
+		public bool Contains(TAlternateKey key)
 		{
-			bool result;
-			value = default;
-
-			using (RootLock root = BPlusTree.LockRoot(LockType.Read))
-				result = Search(root.Pin, key, ref value);
-
-			return result;
+			using var root = BPlusTree.LockRoot(LockType.Read);
+			return Seek(root.Pin, key, out _, out _);
 		}
 
-		private bool Search(NodePin thisLock, TAlternateKey key, ref TValue value)
+		public bool TryGetValue(TAlternateKey key, out TValue value)
+		{
+			using var root = BPlusTree.LockRoot(LockType.Read);
+			return Search(root.Pin, key, out _, out value);
+		}
+
+		public bool TryGetValue(TAlternateKey key, out TKey originalKey, out TValue value)
+		{
+			using RootLock root = BPlusTree.LockRoot(LockType.Read);
+			return Search(root.Pin, key, out originalKey, out value);
+		}
+
+		private bool Search(NodePin thisLock, TAlternateKey key, out TKey originalKey, out TValue value)
 		{
 			if (Seek(thisLock, key, out NodePin pin, out int offset))
 				using (pin)
 				{
-					value = pin.Ptr[offset].Payload;
+					var element = pin.Ptr[offset];
+					originalKey = element.Key;
+					value = element.Payload;
 					return true;
 				}
+
+			originalKey = default;
+			value = default;
 			return false;
 		}
 

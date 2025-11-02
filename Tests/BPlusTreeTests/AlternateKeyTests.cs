@@ -94,5 +94,29 @@ public class AlternateKeyTests
 
 		File.Delete(fileName);
 	}
+
+
+	[TestMethod]
+	public void StringKeyAlternateContains()
+	{
+		var fileName = Path.GetTempFileName();
+		using (var tree = BPlusTree.Create(PrimitiveSerializer.String, PrimitiveSerializer.Int32, fileName))
+		{
+			tree.Add("ONE", 1);
+
+			var alternate = tree.GetAlternateLookup<ReadOnlySpan<char>>();
+
+			Assert.IsTrue(alternate.Contains("ONE".AsSpan()));
+			Assert.IsFalse(alternate.Contains("one".AsSpan()));
+
+			alternate.TryGetValue("ONE".AsSpan(), out string key, out int value);
+			Assert.IsFalse(alternate.TryGetValue("one".AsSpan(), out _, out _));
+
+			Assert.AreEqual("ONE", key);
+			Assert.AreEqual(1, value);
+		}
+
+		File.Delete(fileName);
+	}
 }
 
