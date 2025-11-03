@@ -47,7 +47,7 @@ partial class BPlusTree<TKey, TValue>
             if(_updater != null)
                 _value = _updater(key, value);
 
-            if (EqualityComparer<TValue>.Default.Equals(value, _value))
+            if (_valueComparer.Equals(value, _value))
                 return false;
             
             value = _value;

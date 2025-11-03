@@ -42,7 +42,7 @@ partial class BPlusTree<TKey, TValue>
                 value = _fnUpdate(key, value);
             else
                 value = _newValue;
-            return !EqualityComparer<TValue>.Default.Equals(value, _oldValue);
+            return !_valueComparer.Equals(value, _oldValue);
         }
         public bool Updated { get { return _updated; } }
     }
@@ -61,10 +61,10 @@ partial class BPlusTree<TKey, TValue>
 
         public bool UpdateValue(TKey key, ref TValue value)
         {
-            if(EqualityComparer<TValue>.Default.Equals(value, _comparisonValue))
+            if(_valueComparer.Equals(value, _comparisonValue))
             {
                 _updated = true;
-                if(!EqualityComparer<TValue>.Default.Equals(value, _newValue))
+                if(!_valueComparer.Equals(value, _newValue))
                 {
                     value = _newValue;
                     return true;

@@ -36,9 +36,8 @@ public sealed partial class BPlusTree<TKey, TValue>
 
         public bool Contains(TValue item)
         {
-            var c = EqualityComparer<TValue>.Default;
             foreach (TValue value in this)
-                if (c.Equals(item, value))
+                if (_valueComparer.Equals(item, value))
                     return true;
             return false;
         }

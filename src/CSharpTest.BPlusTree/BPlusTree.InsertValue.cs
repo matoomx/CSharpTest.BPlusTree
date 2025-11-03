@@ -41,7 +41,7 @@ partial class BPlusTree<TKey, TValue>
             if(!_canUpdate)
                 throw new DuplicateKeyException($"Duplicate key: {key}");
             
-            if (EqualityComparer<TValue>.Default.Equals(value, _value))
+            if (_valueComparer.Equals(value, _value))
                 return false;
             value = _value;
             return true;

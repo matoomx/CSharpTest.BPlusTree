@@ -25,7 +25,8 @@ namespace CSharpTest.Collections.Generic;
 /// </summary>
 public sealed partial class BPlusTree<TKey, TValue> : IDisposable, ITransactable, IDictionary<TKey, TValue>
 {
-    readonly Options _options;
+    static readonly EqualityComparer<TValue> _valueComparer = EqualityComparer<TValue>.Default;
+	readonly Options _options;
     readonly NodeCacheBase _storage;
     readonly ILockStrategy _selfLock;
     readonly IComparer<TKey> _keyComparer;

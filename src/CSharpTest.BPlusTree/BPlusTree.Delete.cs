@@ -48,7 +48,7 @@ partial class BPlusTree<TKey, TValue>
         }
         bool IRemoveValue<TKey, TValue>.RemoveValue(TKey key, TValue value)
         {
-            return EqualityComparer<TValue>.Default.Equals(value, _value);
+            return _valueComparer.Equals(value, _value);
         }
     }
 
