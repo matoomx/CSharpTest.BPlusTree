@@ -13,6 +13,8 @@
  */
 #endregion
 
+using System.Runtime.InteropServices;
+
 namespace CSharpTest.Collections.Generic;
 
 /// <summary>
@@ -20,6 +22,7 @@ namespace CSharpTest.Collections.Generic;
 /// meaning is defined by the ITrasactionLog implementation and is otherwise treated as an
 /// opaque token identifier of the transaction.
 /// </summary>
+[StructLayout(LayoutKind.Auto)]
 public struct TransactionToken
 {
 	public SerializeStream Stream;

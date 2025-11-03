@@ -12,12 +12,15 @@
  * limitations under the License.
  */
 #endregion
+
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class TransactionLog<TKey, TValue>
 {
+	[StructLayout(LayoutKind.Auto)]
 	struct LogEntry
     {
         public int TransactionId;

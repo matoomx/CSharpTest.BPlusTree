@@ -12,13 +12,16 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
+	[StructLayout(LayoutKind.Auto)]
 	private struct InsertionInfo : ICreateOrUpdateValue<TKey, TValue>
     {
         private TValue _value;

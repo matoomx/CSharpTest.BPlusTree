@@ -12,10 +12,14 @@
  * limitations under the License.
  */
 #endregion
+
+using System.Runtime.InteropServices;
+
 namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
+	[StructLayout(LayoutKind.Auto)]
 	private struct FetchValue : ICreateOrUpdateValue<TKey, TValue>
     {
         private TValue _value;

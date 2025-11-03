@@ -15,12 +15,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-    struct RemoveAlways : IRemoveValue<TKey, TValue>
+    [StructLayout(LayoutKind.Auto)]
+	struct RemoveAlways : IRemoveValue<TKey, TValue>
     {
         private bool _removed;
         private TValue _value;
@@ -35,6 +37,8 @@ partial class BPlusTree<TKey, TValue>
             return _removed = true;
         }
     }
+
+    [StructLayout(LayoutKind.Auto)]
     struct RemoveIfValue : IRemoveValue<TKey, TValue>
     {
         private readonly TValue _value;
@@ -47,7 +51,9 @@ partial class BPlusTree<TKey, TValue>
             return EqualityComparer<TValue>.Default.Equals(value, _value);
         }
     }
-    struct RemoveIfPredicate : IRemoveValue<TKey, TValue>
+
+	[StructLayout(LayoutKind.Auto)]
+	struct RemoveIfPredicate : IRemoveValue<TKey, TValue>
     {
         private readonly KeyValuePredicate<TKey, TValue> _test;
         public RemoveIfPredicate(KeyValuePredicate<TKey, TValue> test)

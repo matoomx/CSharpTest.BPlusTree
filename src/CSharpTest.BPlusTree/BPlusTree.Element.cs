@@ -15,13 +15,15 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
     [DebuggerDisplay("{Key} = {_child}")]
-    struct Element
+	[StructLayout(LayoutKind.Auto)]
+	struct Element
     {
         public readonly TKey Key;
         private readonly object _child;

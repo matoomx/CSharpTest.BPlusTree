@@ -12,14 +12,16 @@
  * limitations under the License.
  */
 #endregion
-using System;
+
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 partial class BPlusTree<TKey, TValue>
 {
-    private struct UpdateInfo : IUpdateValue<TKey, TValue>
+	[StructLayout(LayoutKind.Auto)]
+	private struct UpdateInfo : IUpdateValue<TKey, TValue>
     {
         private bool _updated;
         private TValue _oldValue, _newValue;
@@ -44,7 +46,9 @@ partial class BPlusTree<TKey, TValue>
         }
         public bool Updated { get { return _updated; } }
     }
-    private struct UpdateIfValue : IUpdateValue<TKey, TValue>
+
+	[StructLayout(LayoutKind.Auto)]
+	private struct UpdateIfValue : IUpdateValue<TKey, TValue>
     {
         private bool _updated;
         private TValue _comparisonValue, _newValue;

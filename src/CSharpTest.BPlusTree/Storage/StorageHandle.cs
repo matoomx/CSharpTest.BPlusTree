@@ -16,10 +16,12 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 [DebuggerDisplay("{Id}")]
+[StructLayout(LayoutKind.Auto)]
 public struct StorageHandle : IEquatable<StorageHandle>
 {
     private static int _uniqueCounter = new Random().Next();

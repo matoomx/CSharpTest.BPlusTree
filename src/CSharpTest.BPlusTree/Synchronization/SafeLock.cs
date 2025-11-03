@@ -12,14 +12,17 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 /// <summary>
 /// Used to acquire a lock(object) with a timeout, either specified or the default of 2 minutes.
 /// </summary>
+[StructLayout(LayoutKind.Auto)]
 public struct SafeLock : IDisposable
 {
     /// <summary>

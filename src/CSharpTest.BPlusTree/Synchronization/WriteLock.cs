@@ -12,13 +12,16 @@
  * limitations under the License.
  */
 #endregion
+
 using System;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 /// <summary>
 /// Allows a write lock to be disposed
 /// </summary>
+[StructLayout(LayoutKind.Auto)]
 public struct WriteLock : IDisposable
 { 
     /// <summary> Acquires the lock within the timeout or throws TimeoutException </summary>

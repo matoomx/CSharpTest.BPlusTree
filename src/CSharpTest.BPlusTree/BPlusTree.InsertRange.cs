@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -50,7 +51,9 @@ partial class BPlusTree<TKey, TValue>
 
         public bool IsComplete { get { return _continue == false; } }
     }
-    private struct KeyRange
+
+	[StructLayout(LayoutKind.Auto)]
+	private struct KeyRange
     {
         public KeyRange(IComparer<TKey> keyComparer) : this()
         {

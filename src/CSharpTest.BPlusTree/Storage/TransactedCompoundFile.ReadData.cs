@@ -15,11 +15,13 @@
 
 using System;
 using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class TransactedCompoundFile
 {
+	[StructLayout(LayoutKind.Auto)]
 	public ref struct ReadData : IDisposable
     {
         private byte[] _rented;
