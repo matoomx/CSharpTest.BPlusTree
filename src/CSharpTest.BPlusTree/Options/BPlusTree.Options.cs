@@ -330,11 +330,6 @@ public partial class BPlusTree<TKey, TValue>
             }
         }
 
-        /// <summary>
-        /// CacheKeepAliveFactory provides a delegate to inject an implementation of the IObjectKeepAlive
-        /// interface while then igoring all the other CacheKeepAliveXXX properties.
-        /// </summary>
-        public FactoryMethod<IObjectKeepAlive> CacheKeepAliveFactory { get;set; }
 
         /// <summary> 
         /// Determins minimum number of recently visited nodes to keep alive in memory.  This number defines
@@ -472,11 +467,8 @@ public partial class BPlusTree<TKey, TValue>
         /// <summary>
         /// Creates the keep-alive object reference tracking implementation
         /// </summary>
-        internal IObjectKeepAlive CreateCacheKeepAlive()
+        internal ObjectKeepAlive CreateCacheKeepAlive()
         {
-            if (CacheKeepAliveFactory != null)
-                return CacheKeepAliveFactory();
-
             return new ObjectKeepAlive(
                 CacheKeepAliveMinimumHistory,
                 CacheKeepAliveMaximumHistory,
