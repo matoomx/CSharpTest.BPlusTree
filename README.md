@@ -24,7 +24,8 @@ Some of the changes in this fork...
 * Remove RecycableMemoryStream and use rented buffers instead.
 * Use System.IO.Hashing for vectorized CRC checks.
 * Use a single namespace CSharpTest.Collections.Generic so it's easier for clients.
-* More statics so that generic types can be inferred.  
+* More statics so that generic types can be inferred.
+* Read data throght AltrenateLookup to reduce allocations.
 
 ## Performance ##
 
