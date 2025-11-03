@@ -48,10 +48,10 @@ partial class BPlusTree<TKey, TValue>
     {
         private bool _updated;
         private TValue _comparisonValue, _newValue;
-        public UpdateIfValue(TValue newValue, TValue comparisonValue)
-            : this()
-        {
-            _newValue = newValue;
+		public UpdateIfValue(TValue newValue, TValue comparisonValue)
+			: this()
+		{
+			_newValue = newValue;
             _comparisonValue = comparisonValue;
         }
 
@@ -74,14 +74,15 @@ partial class BPlusTree<TKey, TValue>
     private bool Seek(NodePin thisLock, TKey key, out NodePin pin, out int offset)
     {
         NodePin myPin = thisLock, nextPin = null;
-        try
+        var find = new Element(key);
+		try
         {
             while (myPin != null)
             {
                 Node me = myPin.Ptr;
 
                 bool isValueNode = me.IsLeaf;
-				if (me.BinarySearch(_itemComparer, new Element(key), out int ordinal) && isValueNode)
+				if (me.BinarySearch(_itemComparer, find, out int ordinal) && isValueNode)
 				{
 					pin = myPin;
 					myPin = null;
