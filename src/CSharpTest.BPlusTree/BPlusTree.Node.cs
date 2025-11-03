@@ -118,7 +118,45 @@ partial class BPlusTree<TKey, TValue>
             return true;
         }
 
-        public void ReplaceKey(int ordinal, TKey minKey)
+        public virtual bool BinarySearch<TAlternate>(IAlternateComparer<TAlternate, TKey> comparer, TAlternate altKey, out int ordinal) where TAlternate : allows ref struct
+		{             
+            int start = _count == 0 || _items[0].IsValue ? 0 : 1;
+
+            ordinal = BinarySearch(_items, start, _count - start, altKey, comparer);
+            
+            if (ordinal < 0)
+            {
+                ordinal = ~ordinal;
+                if (IsLeaf)
+                    return false;
+                if (ordinal > 0)
+                    ordinal--;
+                return false;
+            }
+            return true;
+		}
+
+        private static int BinarySearch<TAlternate>(Element[] source, int index, int length, TAlternate altKey, IAlternateComparer<TAlternate, TKey> comparer) where TAlternate : allows ref struct
+		{
+			int lo = index;
+			int hi = index + length - 1;
+
+			while (lo <= hi)
+			{
+				int i = lo + ((hi - lo) >> 1); 
+				int c = comparer.Compare(source[i].Key, altKey);
+
+				if (c == 0) return i;
+				if (c < 0)
+					lo = i + 1;
+				else
+					hi = i - 1;
+			}
+			return ~lo;
+		}
+
+
+		public void ReplaceKey(int ordinal, TKey minKey)
         { 
             ReplaceKey(ordinal, minKey, null); 
         }
