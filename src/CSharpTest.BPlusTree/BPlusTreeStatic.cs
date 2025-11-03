@@ -12,7 +12,7 @@ public static class BPlusTree
 	{
 		ArgumentNullException.ThrowIfNull(keySerializer, nameof(keySerializer));
 		ArgumentNullException.ThrowIfNull(valueSerializer, nameof(valueSerializer)); 
-		return new BPlusTree<TKey, TValue>(new BPlusTree<TKey, TValue>.Options(keySerializer, valueSerializer, comparer ?? Comparer<TKey>.Default));
+		return new BPlusTree<TKey, TValue>(new BPlusTree<TKey, TValue>.Options(keySerializer, valueSerializer, comparer ?? GetDefaultComparer<TKey>()));
 	}
 
 	/// <summary>
@@ -20,7 +20,7 @@ public static class BPlusTree
 	/// </summary>
 	public static BPlusTree<TKey, TValue> Create<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer, string fileName)
 	{
-		return Create(keySerializer, valueSerializer, Comparer<TKey>.Default, fileName, 0, 0);
+		return Create(keySerializer, valueSerializer, GetDefaultComparer<TKey>(), fileName, 0, 0);
 	}
 
 	/// <summary>
@@ -36,7 +36,7 @@ public static class BPlusTree
 	/// </summary>
 	public static BPlusTree<TKey, TValue> Create<TKey, TValue>(ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer, string fileName, int averageKeySizeBytes, int averageValueSizeBytes)
 	{
-		return Create(keySerializer, valueSerializer, Comparer<TKey>.Default, fileName, averageKeySizeBytes, averageValueSizeBytes);
+		return Create(keySerializer, valueSerializer, GetDefaultComparer<TKey>(), fileName, averageKeySizeBytes, averageValueSizeBytes);
 	}
 
 	/// <summary>
@@ -85,5 +85,10 @@ public static class BPlusTree
 	public static IEnumerable<KeyValuePair<TKey,TValue>> EnumerateFile<TKey, TValue>(BPlusTree<TKey, TValue>.Options options)
 	{
 		return BPlusTree<TKey,TValue>.EnumerateFile(options);
+	}
+
+	private static IComparer<TKey> GetDefaultComparer<TKey>()
+	{
+		return (typeof(TKey) == typeof(string)) ? (IComparer<TKey>)(IComparer<string>)AlternateComparers.StringOrdinal : Comparer<TKey>.Default;
 	}
 }
