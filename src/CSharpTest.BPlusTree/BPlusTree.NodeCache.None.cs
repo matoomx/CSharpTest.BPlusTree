@@ -25,15 +25,10 @@ partial class BPlusTree<TKey, TValue>
         readonly ReaderWriterLocking _lock;
         NodeHandle _root;
 
-        public NodeCacheNone(Options options): base(Fix(options))
+        public NodeCacheNone(Options options): base(options)
         {
             _lock = new ReaderWriterLocking();
             _list = [];
-        }
-
-        static Options Fix(Options options)
-        {
-            return options;
         }
 
         protected override void LoadStorage()

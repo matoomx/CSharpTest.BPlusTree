@@ -27,7 +27,6 @@ partial class BPlusTree<TKey, TValue>
     sealed partial class NodeCacheNormal : NodeCacheBase
     {
         private readonly ObjectKeepAlive _keepAlive;
-
         private readonly Dictionary<NodeHandle, WeakReference<CacheEntry>> _cache;
         private bool _disposed;
         private CacheEntry _root;

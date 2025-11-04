@@ -41,7 +41,6 @@ public partial class BPlusTree<TKey, TValue>
         private int _minimumValueNodes = 3;
         private int _maximumValueNodes = 8; // (assumes a value size of apx 500 bytes: (FileBlockSize - StoreageOverhead) / (AvgValueBytes + AvgKeyBytes)
         private int _fillValueNodes = 4;
-
         private int _fileBlockSize = 4096;
 
         private string _fileName;

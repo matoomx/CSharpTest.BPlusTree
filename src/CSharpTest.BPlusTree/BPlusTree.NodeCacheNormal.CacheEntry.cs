@@ -22,7 +22,7 @@ partial class BPlusTree<TKey, TValue>
     sealed partial class NodeCacheNormal
     {
         [System.Diagnostics.DebuggerDisplay("{Handle} = {Node}")]
-        class CacheEntry
+        sealed class CacheEntry
         {
             private NodeCacheNormal _owner;
             public CacheEntry(NodeCacheNormal owner, NodeHandle handle)
@@ -40,9 +40,9 @@ partial class BPlusTree<TKey, TValue>
                     {
                         using (_owner._cacheLock.Write(_owner.Options.LockTimeout))
                         {
-								if (_owner._cache.TryGetValue(Handle, out WeakReference<CacheEntry> me) && me.IsAlive == false)
-									_owner._cache.Remove(Handle);
-							}
+                            if (_owner._cache.TryGetValue(Handle, out WeakReference<CacheEntry> me) && me.IsAlive == false)
+                                _owner._cache.Remove(Handle);
+                        }
                     }
                     catch (ObjectDisposedException)
                     { }
