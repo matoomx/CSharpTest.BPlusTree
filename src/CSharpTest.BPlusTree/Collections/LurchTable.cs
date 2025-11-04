@@ -105,7 +105,7 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(limit,0, nameof(limit));
         if (ordering == LurchTableOrder.None)
-            ArgumentOutOfRangeException.ThrowIfLessThan( limit, int.MaxValue, nameof("ordering"));
+            ArgumentOutOfRangeException.ThrowIfLessThan( limit, int.MaxValue, nameof(ordering));
 
         _limit = limit <= 0 ? int.MaxValue : limit;
         _comparer = comparer;

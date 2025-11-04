@@ -161,5 +161,4 @@ public sealed partial class LurchTable<TKey, TValue>
             throw new NotSupportedException();
         }
     }
-    #endregion
 }

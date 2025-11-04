@@ -21,8 +21,6 @@ namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
-#endregion
-
 	/// <summary>
 	/// Provides the collection of Keys for the LurchTable
 	/// </summary>
@@ -34,8 +32,6 @@ public sealed partial class LurchTable<TKey, TValue>
         {
             _owner = owner;
         }
-
-        #region ICollection<TKey> Members
 
         /// <summary>
         /// Determines whether the <see cref="T:System.Collections.Generic.ICollection`1"/> contains a specific value.
@@ -158,8 +154,5 @@ public sealed partial class LurchTable<TKey, TValue>
         {
             throw new NotSupportedException();
         }
-
-        #endregion
     }
-    #endregion
 }

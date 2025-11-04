@@ -17,14 +17,9 @@ namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
-#endregion
-
-	#region Internal Structures
-
 	struct FreeList
     {
         public int Head;
         public int Tail;
     }
-    #endregion
 }
