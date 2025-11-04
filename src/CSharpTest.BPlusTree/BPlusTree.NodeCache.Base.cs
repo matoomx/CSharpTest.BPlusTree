@@ -30,7 +30,10 @@ partial class BPlusTree<TKey, TValue>
             LockFactory = Options.LockingFactory;
             Storage = Options.CreateStorage();
 
-            NodeSerializer = new NodeSerializer(Options, new NodeHandleSerializer(Storage));
+			if (Options.UseStorageCache)
+				Storage = new StorageCache(Storage, Options.CacheKeepAliveMaximumHistory);
+
+			NodeSerializer = new NodeSerializer(Options, new NodeHandleSerializer(Storage));
             _version = new NodeVersion();
         }
 
