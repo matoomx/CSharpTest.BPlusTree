@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Runtime.CompilerServices;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -17,16 +16,23 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 
 	public long Position { get { return _oldSize + _currentPos; } }
 
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public Span<byte> GetSpan(int sizeHint)
+	public Span<byte> GetSpan(int size)
     {
-		EnsureCapacity(sizeHint);
+		size = Math.Max(size, 1);
+
+		if (_current.Length < _currentPos + size)
+			Grow(size);
+
 		return _current.Span.Slice(_currentPos);
 	}
 
-	public Memory<byte> GetMemory(int sizeHint)
+	public Memory<byte> GetMemory(int size)
     {
-		EnsureCapacity(sizeHint);
+		size = Math.Max(size, 1);
+
+		if (_current.Length < _currentPos + size)
+			Grow(size);
+
 		return _current.Slice(_currentPos);
 	}
 
@@ -149,24 +155,19 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 	//	await stream.WriteAsync(_current.Slice(0, _currentPos)).ConfigureAwait(false);
 	//}
 
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	private void EnsureCapacity(int size)
+	//[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private void Grow(int needed)
 	{
-		size = Math.Max(size, 1);
-
-		if (_current.Length < _currentPos + size)
+		if (_currentPos > 0)
 		{
-			if (_currentPos > 0)
-			{
-				_old.Add(_current.Slice(0, _currentPos));
-				_oldSize += _currentPos;
-				_currentPos = 0;
-			}
-
-			var newBlock = ArrayPool<byte>.Shared.Rent(Math.Max(DefaultBlockSize, size));
-			_rented.Add(newBlock);
-			_current = newBlock;
+			_old.Add(_current.Slice(0, _currentPos));
+			_oldSize += _currentPos;
+			_currentPos = 0;
 		}
+
+		var newBlock = ArrayPool<byte>.Shared.Rent(Math.Max(DefaultBlockSize, needed));
+		_rented.Add(newBlock);
+		_current = newBlock;	
 	}
 
 	private sealed class BlockSegment : ReadOnlySequenceSegment<byte>
