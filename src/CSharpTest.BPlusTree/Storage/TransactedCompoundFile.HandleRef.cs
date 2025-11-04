@@ -13,11 +13,13 @@
  */
 #endregion
 using System;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class TransactedCompoundFile
 {
+	[StructLayout(LayoutKind.Auto)]
 	struct HandleRef
     {
         public readonly int Section;

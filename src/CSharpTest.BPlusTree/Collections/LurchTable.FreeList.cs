@@ -13,10 +13,13 @@
  */
 #endregion
 
+using System.Runtime.InteropServices;
+
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
+	[StructLayout(LayoutKind.Auto)]
 	struct FreeList
     {
         public int Head;

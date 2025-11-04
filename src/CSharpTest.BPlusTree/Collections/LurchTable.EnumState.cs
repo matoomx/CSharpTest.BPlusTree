@@ -14,13 +14,13 @@
 #endregion
 
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
-	#region Internal Structures
-
+	[StructLayout(LayoutKind.Auto)]
 	struct EnumState
     {
         private object _locked;
@@ -49,5 +49,4 @@ public sealed partial class LurchTable<TKey, TValue>
             Monitor.Enter(_locked = lck);
         }
     }
-    #endregion
 }

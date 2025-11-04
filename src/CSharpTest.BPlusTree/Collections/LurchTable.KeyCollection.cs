@@ -24,7 +24,7 @@ public sealed partial class LurchTable<TKey, TValue>
 	/// <summary>
 	/// Provides the collection of Keys for the LurchTable
 	/// </summary>
-	public class KeyCollection : ICollection<TKey>
+	public sealed class KeyCollection : ICollection<TKey>
     {
         private readonly LurchTable<TKey, TValue> _owner;
 

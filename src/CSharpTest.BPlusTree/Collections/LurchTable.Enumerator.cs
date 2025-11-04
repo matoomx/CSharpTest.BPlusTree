@@ -16,6 +16,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -24,6 +25,7 @@ public sealed partial class LurchTable<TKey, TValue>
 	/// <summary>
 	/// Provides an enumerator that iterates through the collection.
 	/// </summary>
+	[StructLayout(LayoutKind.Auto)]
 	public struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
     {
         private readonly LurchTable<TKey, TValue> _owner;

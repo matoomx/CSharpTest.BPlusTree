@@ -23,7 +23,7 @@ public sealed partial class TransactedCompoundFile
 	/// <summary>
 	/// Advanced Options used to construct a TransactedCompoundFile
 	/// </summary>
-	public class Options : ICloneable
+	public sealed class Options : ICloneable
     {
         private int _blockSize;
 

@@ -13,12 +13,13 @@
  */
 #endregion
 
+using System.Runtime.InteropServices;
+
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
-	#region Internal Structures
-
+	[StructLayout(LayoutKind.Auto)]
 	struct Entry
     {
         public int Prev, Next; // insertion/access sequence ordering
@@ -27,5 +28,4 @@ public sealed partial class LurchTable<TKey, TValue>
         public TKey Key; // key of entry
         public TValue Value; // value of entry
     }
-    #endregion
 }

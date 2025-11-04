@@ -14,13 +14,13 @@
 #endregion
 
 using System;
+using System.Runtime.InteropServices;
 
 namespace CSharpTest.Collections.Generic;
 
 public sealed partial class LurchTable<TKey, TValue>
 {
-	#region Internal Structures
-
+	[StructLayout(LayoutKind.Auto)]
 	struct Add2Info : ICreateOrUpdateValue<TKey, TValue>
     {
         readonly bool _hasAddValue;
@@ -63,5 +63,4 @@ public sealed partial class LurchTable<TKey, TValue>
             return true;
         }
     }
-    #endregion
 }
