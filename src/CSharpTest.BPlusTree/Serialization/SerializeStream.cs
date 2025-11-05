@@ -2,6 +2,8 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+using System.IO;
 
 namespace CSharpTest.Collections.Generic;
 
@@ -74,33 +76,8 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 		return _current.Slice(0, _currentPos);
 	}
 
-	public ReadOnlySequence<byte> GetReadOnlySequence()
-	{
-		if (_old.Count == 0)
-			return new ReadOnlySequence<byte>(_current.Slice(0, _currentPos));
 
-		var first = new BlockSegment(_old[0]);
-		var last = first;
 
-		for (int blockIdx = 1; last.RunningIndex + last.Memory.Length < Position; blockIdx++)
-			last = last.Append(blockIdx == _old.Count ? _current.Slice(0, _currentPos) : _old[blockIdx]);
-
-		return new ReadOnlySequence<byte>(first, 0, last, (int)(Position - last.RunningIndex));
-	}
-
-	public IReadOnlyList<ReadOnlyMemory<byte>> GetBlocks()
-	{
-		if (_old.Count == 0 )
-			return new List<ReadOnlyMemory<byte>>(1) { _current.Slice(0, _currentPos) };
-
-		var list = new List<ReadOnlyMemory<byte>>(_old.Count + 1);
-		
-		foreach(var block in _old)
-			list.Add(block);
-
-		list.Add(_current.Slice(0, _currentPos));
-		return list;
-	}
 
 	public uint CalculateCrc32(int skipInitial = 0)
 	{
@@ -128,34 +105,27 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 		return crc.GetCurrentHashAsUInt32();
 	}
 
-	//public void WriteTo(Stream stream)
-	//{
-	//	foreach (var block in _old)
-	//		stream.Write(block.Span);
 
-	//	stream.Write(_current.Span.Slice(0, _currentPos));
-	//}
-
-	public void WriteTo(Span<byte> target)
+	public void WriteTo(SafeFileHandle fileHandle, long position, int minBlockSize = 0)
 	{
-		foreach (var block in _old)
-		{
-			block.Span.CopyTo(target);
-			target = target.Slice(block.Length);
-		}
-
-		_current.Span.Slice(0, _currentPos).CopyTo(target);
+		if (IsSingleBlock)
+			RandomAccess.Write(fileHandle, _current.Span.Slice(0, Math.Max(minBlockSize, _currentPos)), position);
+		else
+			RandomAccess.Write(fileHandle, GetBlocks(), position);
 	}
 
-	//public async ValueTask WriteToAsync(Stream stream)
-	//   {
-	//	foreach (var block in _old)
-	//		await stream.WriteAsync(block).ConfigureAwait(false);
+	private IReadOnlyList<ReadOnlyMemory<byte>> GetBlocks()
+	{
+		var list = new List<ReadOnlyMemory<byte>>(_old.Count + 1);
+		
+		foreach (var block in _old)
+			list.Add(block);
 
-	//	await stream.WriteAsync(_current.Slice(0, _currentPos)).ConfigureAwait(false);
-	//}
+		list.Add(_current.Slice(0, _currentPos));
 
-	//[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		return list;
+	}
+
 	private void Grow(int needed)
 	{
 		if (_currentPos > 0)
@@ -170,15 +140,4 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 		_current = newBlock;	
 	}
 
-	private sealed class BlockSegment : ReadOnlySequenceSegment<byte>
-	{
-		public BlockSegment(Memory<byte> memory) => this.Memory = memory;
-
-		public BlockSegment Append(Memory<byte> memory)
-		{
-			var nextSegment = new BlockSegment(memory) { RunningIndex = this.RunningIndex + this.Memory.Length };
-			this.Next = nextSegment;
-			return nextSegment;
-		}
-	}
 }

@@ -124,13 +124,13 @@ public partial class OrderedEnumeration<T> : IEnumerable<T>
 
                         if (buffer.Position >= 4096)
                         {
-                            RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
+                            buffer.WriteTo(io, ioPos);
                             ioPos += buffer.Position;
                             buffer.Clear();
                         }
                     }
                     if (buffer.Position > 0)
-                        RandomAccess.Write(io, buffer.GetBlocks(), ioPos);
+                        buffer.WriteTo(io, ioPos);
 
                     orderedSet.Add(Read(io, tempFile));
                 }

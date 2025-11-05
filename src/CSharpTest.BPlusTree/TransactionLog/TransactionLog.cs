@@ -388,36 +388,15 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
 		buffer.Advance(4);
 		BinaryPrimitives.WriteInt32LittleEndian(first.Slice(0, 4), (0xbb << 24) + len);
 
-		if (buffer.IsSingleBlock)
-			WriteBytes(buffer.GetFirstBlock().Span);
-        else
-			WriteBytes(buffer.GetBlocks(), buffer.Position);
-	}
+		if (_options.ReadOnly)
+			return;
 
-    private void WriteBytes(ReadOnlySpan<byte> bytes)
-    {
-        if (_options.ReadOnly) 
-            return;
-        
         lock (_logSync)
         {
-            _logfile ??= File.OpenHandle(_options.FileName, FileMode.Append, FileAccess.Write, FileShare.Read, _options.FileOptions);           
-            RandomAccess.Write(_logfile, bytes, _fLength);
-            _fLength += bytes.Length;
-        }
-    }
-
-	private void WriteBytes(IReadOnlyList<ReadOnlyMemory<byte>> bytes, long size)
-	{
-		if (_options.ReadOnly) 
-            return;
-		
-        lock (_logSync)
-		{
 			_logfile ??= File.OpenHandle(_options.FileName, FileMode.Append, FileAccess.Write, FileShare.Read, _options.FileOptions);
-			RandomAccess.Write(_logfile, bytes, _fLength);
-			_fLength += size;
-		}
+			buffer.WriteTo(_logfile, _fLength);
+            _fLength += buffer.Position;
+        }
 	}
 
 	/// <summary>

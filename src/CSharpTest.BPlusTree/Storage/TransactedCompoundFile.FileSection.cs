@@ -129,10 +129,7 @@ public sealed partial class TransactedCompoundFile
 
             var position = _sectionPosition + (BlockSize * block.Offset);
 
-			if (source.IsSingleBlock)
-				RandomAccess.Write(fileHandle, source.GetFirstBlock().Span, position);
-			else
-				RandomAccess.Write(fileHandle, source.GetBlocks(), position);
+            source.WriteTo(fileHandle, position, BlockSize);
 		}
 
 		public ReadData Read(SafeFileHandle fileHandle, BlockRef block, bool headerOnly)
