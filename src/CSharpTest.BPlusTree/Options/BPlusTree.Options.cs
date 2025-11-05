@@ -449,8 +449,6 @@ public partial class BPlusTree<TKey, TValue>
                         }));
                     }
 
-                    foptions.CommitOnDispose = CommitOnDispose;
-
 					break;
                 }
                 default:
