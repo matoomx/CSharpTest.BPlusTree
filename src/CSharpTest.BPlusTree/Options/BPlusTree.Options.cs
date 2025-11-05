@@ -47,8 +47,8 @@ public partial class BPlusTree<TKey, TValue>
         private INodeStorage _storageSystem;
 
         private CachePolicy _cachePolicy = CachePolicy.Recent;
-        private int _keepAliveMinHistory = 10;
-        private int _keepAliveMaxHistory = 100;
+        private int _keepAliveMinHistory = 128;
+        private int _keepAliveMaxHistory = 1024;
         private int _keepAliveTimeout = 60000;
 
         /// <summary>
