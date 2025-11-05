@@ -11,15 +11,15 @@ namespace CSharpTest.Benchmark;
 public class PreForkCompare
 {
 	[Benchmark]
-	public void Original_RawDisk_IntString()
+	public void Original_IntString()
     {
         var options = new PreForkCollection.BPlusTree<int, string>.OptionsV2(PreForkSerialization.PrimitiveSerializer.Int32, PreForkSerialization.PrimitiveSerializer.String)
         {
             CreateFile = PreForkCollection.CreatePolicy.Always,
             FileName = Path.GetTempFileName(),
-            CachePolicy = PreForkCollection.CachePolicy.None,
-            StoragePerformance = PreForkCollection.StoragePerformance.CommitToDisk,
-        };
+			CachePolicy = PreForkCollection.CachePolicy.None,
+			StoragePerformance = PreForkCollection.StoragePerformance.CommitToDisk,
+		};
 
         const int entries = 5000;
 
@@ -30,7 +30,7 @@ public class PreForkCompare
 	}
 
 	[Benchmark]
-	public void Fork_RawDisk_IntString()
+	public void Fork_IntString()
 	{
 		var options = new BPlusTree<int, string>.Options(PrimitiveSerializer.Int32, PrimitiveSerializer.String)
 		{
@@ -49,7 +49,7 @@ public class PreForkCompare
 	}
 
 	[Benchmark]
-	public void Original_RawDisk_IntGuid()
+	public void Original_IntGuid()
 	{
 		var options = new PreForkCollection.BPlusTree<int, Guid>.OptionsV2(PreForkSerialization.PrimitiveSerializer.Int32, PreForkSerialization.PrimitiveSerializer.Guid)
 		{
@@ -68,7 +68,7 @@ public class PreForkCompare
 	}
 
 	[Benchmark]
-	public void Fork_RawDisk_IntGuid()
+	public void Fork_IntGuid()
 	{
 		var options = new BPlusTree<int, Guid>.Options(PrimitiveSerializer.Int32, PrimitiveSerializer.Guid)
 		{
@@ -84,6 +84,44 @@ public class PreForkCompare
 
 		for (var i = 0; i < entries; i++)
 			tree[i] = Guid.NewGuid();
+	}
+
+	[Benchmark]
+	public void Original_IntInt()
+	{
+		var options = new PreForkCollection.BPlusTree<int, int>.OptionsV2(PreForkSerialization.PrimitiveSerializer.Int32, PreForkSerialization.PrimitiveSerializer.Int32)
+		{
+			CreateFile = PreForkCollection.CreatePolicy.Always,
+			FileName = Path.GetTempFileName(),
+			CachePolicy = PreForkCollection.CachePolicy.None,
+			StoragePerformance = PreForkCollection.StoragePerformance.CommitToDisk,
+		};
+
+		const int entries = 5000;
+
+		using var tree = new PreForkCollection.BPlusTree<int, int>(options);
+
+		for (var i = 0; i < entries; i++)
+			tree[i] = i;
+	}
+
+	[Benchmark]
+	public void Fork_IntInt()
+	{
+		var options = new BPlusTree<int, int>.Options(PrimitiveSerializer.Int32, PrimitiveSerializer.Int32)
+		{
+			CreateFile = CreatePolicy.Always,
+			FileName = Path.GetTempFileName(),
+			CachePolicy = CachePolicy.None,
+			StoragePerformance = StoragePerformance.CommitToDisk,
+		};
+
+		const int entries = 5000;
+
+		using var tree = new BPlusTree<int, int>(options);
+
+		for (var i = 0; i < entries; i++)
+			tree[i] = i;
 	}
 }
 
