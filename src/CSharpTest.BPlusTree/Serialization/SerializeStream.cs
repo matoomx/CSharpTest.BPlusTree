@@ -9,7 +9,7 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 {
 	private const int DefaultBlockSize = 8192;
 	private readonly List<byte[]> _rented = new(1);
-	private readonly List<Memory<byte>> _old = new(1);
+	private readonly List<Memory<byte>> _old = new(0);
 	private long _oldSize = 0;
 	private Memory<byte> _current = Memory<byte>.Empty;
 	private int _currentPos = 0;
