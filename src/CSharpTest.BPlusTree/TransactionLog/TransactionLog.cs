@@ -350,7 +350,8 @@ public sealed partial class TransactionLog<TKey, TValue> : ITransactionLog<TKey,
         if (buffer == null)
         {
             token.Stream = buffer = new SerializeStream();
-            PrimitiveSerializer.Int32.WriteTo(0, buffer);
+            buffer.GetSpan(4); //reserve space for header
+            buffer.Advance(4);
             PrimitiveSerializer.Int32.WriteTo(unchecked((int)token.Handle), buffer);
             PrimitiveSerializer.Int16.WriteTo(0, buffer);
         }
