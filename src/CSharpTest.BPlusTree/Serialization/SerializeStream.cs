@@ -114,7 +114,7 @@ public sealed class SerializeStream : IBufferWriter<byte> , IDisposable
 			RandomAccess.Write(fileHandle, GetBlocks(), position);
 	}
 
-	private IReadOnlyList<ReadOnlyMemory<byte>> GetBlocks()
+	private List<ReadOnlyMemory<byte>> GetBlocks()
 	{
 		var list = new List<ReadOnlyMemory<byte>>(_old.Count + 1);
 		
