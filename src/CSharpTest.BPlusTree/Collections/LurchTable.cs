@@ -21,22 +21,6 @@ using System.Threading;
 namespace CSharpTest.Collections.Generic;
 
 /// <summary>
-/// Defines if and how items added to a LurchTable are linked together, this defines
-/// the value returned from Peek/Dequeue as the oldest entry of the specified operation.
-/// </summary>
-public enum LurchTableOrder
-{
-    /// <summary> No linking </summary>
-    None,
-    /// <summary> Linked in insertion order </summary>
-    Insertion,
-    /// <summary> Linked by most recently inserted or updated </summary>
-    Modified,
-    /// <summary> Linked by most recently inserted, updated, or fetched </summary>
-    Access,
-}
-
-/// <summary>
 /// LurchTable stands for "Least Used Recently Concurrent Hash Table" and has definate
 /// similarities to both the .NET 4 ConcurrentDictionary as well as Java's LinkedHashMap.
 /// This gives you a thread-safe dictionary/hashtable that stores element ordering by
@@ -49,7 +33,6 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
 {
     /// <summary> Method signature for the ItemUpdated event </summary>
     public delegate void ItemUpdatedMethod(KeyValuePair<TKey, TValue> previous, KeyValuePair<TKey, TValue> next);
-
     /// <summary> Event raised after an item is removed from the collection </summary>
     public event Action<KeyValuePair<TKey, TValue>> ItemRemoved;
     /// <summary> Event raised after an item is updated in the collection </summary>
@@ -67,7 +50,6 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
     private readonly object[] _locks;
     private readonly int[] _buckets;
     private readonly FreeList[] _free;
-
     private Entry[][] _entries;
     private int _used, _count;
     private int _allocNext, _freeVersion;
@@ -483,9 +465,14 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
     /// </summary>
     public Enumerator GetEnumerator() { return new Enumerator(this); }
     IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
-    { return GetEnumerator(); }
+    { 
+        return GetEnumerator(); 
+    }
+    
     IEnumerator IEnumerable.GetEnumerator()
-    { return GetEnumerator(); }
+    { 
+        return GetEnumerator(); 
+    }
 
 
     private KeyCollection _keyCollection;
@@ -493,14 +480,18 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
     /// Gets an <see cref="T:System.Collections.Generic.ICollection`1"/> containing the keys of the <see cref="T:System.Collections.Generic.IDictionary`2"/>.
     /// </summary>
     public KeyCollection Keys { get { return _keyCollection ??= new KeyCollection(this); } }
-    [Obsolete] ICollection<TKey> IDictionary<TKey, TValue>.Keys { get { return Keys; } }
+    
+    [Obsolete] 
+    ICollection<TKey> IDictionary<TKey, TValue>.Keys { get { return Keys; } }
 
     private ValueCollection _valueCollection;
     /// <summary>
     /// Gets an <see cref="T:System.Collections.Generic.ICollection`1"/> containing the values in the <see cref="T:System.Collections.Generic.IDictionary`2"/>.
     /// </summary>
     public ValueCollection Values { get { return _valueCollection ??= new ValueCollection(this); } }
-    [Obsolete] ICollection<TValue> IDictionary<TKey, TValue>.Values { get { return Values; } }
+    
+    [Obsolete] 
+    ICollection<TValue> IDictionary<TKey, TValue>.Values { get { return Values; } }
 
     /// <summary>
     /// Retrieves the oldest entry in the collection based on the ordering supplied to the constructor.
@@ -703,9 +694,8 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
 		InsertResult result = InternalInsert(hash, key, out int added, ref value);
 
 		if (added > _limit && _ordering != LurchTableOrder.None)
-        {
-			TryDequeue(out KeyValuePair<TKey, TValue> ignore);
-		}
+			TryDequeue(out _);
+
         return result;
     }
 
@@ -745,9 +735,7 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
             }
             if (value.CreateValue(key, out temp))
             {
-#pragma warning disable 612,618
                 index = AllocSlot();
-#pragma warning restore 612,618
                 _entries[index >> _shift][index & _shiftMask].Hash = hash;
                 _entries[index >> _shift][index & _shiftMask].Key = key;
                 _entries[index >> _shift][index & _shiftMask].Value = temp;
@@ -831,39 +819,35 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
         {
             int cmp;
             int prev = _entries[index >> _shift][index & _shiftMask].Prev;
-            while (prev >= 0 && prev != (cmp = Interlocked.CompareExchange(
-                        ref _entries[index >> _shift][index & _shiftMask].Prev, ~prev, prev)))
+            while (prev >= 0 && prev != (cmp = Interlocked.CompareExchange(ref _entries[index >> _shift][index & _shiftMask].Prev, ~prev, prev)))
                 prev = cmp;
+            
             if (prev < 0)
                 throw new LurchTableCorruptionException();
 
             int next = _entries[index >> _shift][index & _shiftMask].Next;
-            while (next >= 0 && next != (cmp = Interlocked.CompareExchange(
-                        ref _entries[index >> _shift][index & _shiftMask].Next, ~next, next)))
+            while (next >= 0 && next != (cmp = Interlocked.CompareExchange(ref _entries[index >> _shift][index & _shiftMask].Next, ~next, next)))
                 next = cmp;
+            
             if (next < 0)
                 throw new LurchTableCorruptionException();
 
-            if ((Interlocked.CompareExchange(
-                    ref _entries[prev >> _shift][prev & _shiftMask].Next, next, index) == index))
+            if ((Interlocked.CompareExchange(ref _entries[prev >> _shift][prev & _shiftMask].Next, next, index) == index))
             {
-                while (Interlocked.CompareExchange(
-                           ref _entries[next >> _shift][next & _shiftMask].Prev, prev, index) != index)
+                while (Interlocked.CompareExchange(ref _entries[next >> _shift][next & _shiftMask].Prev, prev, index) != index)
                 { }
                 return;
             }
 
             //cancel the delete markers and retry
-            if (~next != Interlocked.CompareExchange(
-                    ref _entries[index >> _shift][index & _shiftMask].Next, next, ~next))
+            if (~next != Interlocked.CompareExchange(ref _entries[index >> _shift][index & _shiftMask].Next, next, ~next))
                 throw new LurchTableCorruptionException();
-            if (~prev != Interlocked.CompareExchange(
-                    ref _entries[index >> _shift][index & _shiftMask].Prev, prev, ~prev))
+            
+            if (~prev != Interlocked.CompareExchange(ref _entries[index >> _shift][index & _shiftMask].Prev, prev, ~prev))
                 throw new LurchTableCorruptionException();
         }
     }
 
-    [Obsolete("Release build inlining, so we need to ignore for testing.")]
     int AllocSlot()
     {
         while (true)
@@ -930,8 +914,6 @@ public sealed partial class LurchTable<TKey, TValue> : IDictionary<TKey, TValue>
         int prev = Interlocked.Exchange(ref _free[slot].Tail, index);
 
         if (prev <= 0 || 0 != Interlocked.CompareExchange(ref _entries[prev >> _shift][prev & _shiftMask].Link, index, 0))
-        {
             throw new LurchTableCorruptionException();
-        }
     }
 }
