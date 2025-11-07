@@ -508,7 +508,34 @@ public class TestLurchTable : TestGenericCollection<LurchTable<int, string>, Key
 		Assert.Throws<ObjectDisposedException>(() => test.Add(1, ""));
     }
 
-    class KeyValueEquality<TKey, TValue> : IEqualityComparer<KeyValuePair<TKey, TValue>>
+    [TestMethod]
+    public void TestHashCollision()
+    {
+        var test = new LurchTable<CollisionKey, string>(LurchTableOrder.Access, 1024);       
+        var key1 = new CollisionKey(0, 1);
+		var key2 = new CollisionKey(0, 2);
+		var key3 = new CollisionKey(0, 3); //Same hash as key1
+
+		Assert.AreNotEqual(key1, key2);
+		Assert.AreNotEqual(key2, key3);
+		Assert.AreNotEqual(key1, key3);
+		Assert.AreNotEqual(key1.GetHashCode(), key2.GetHashCode());
+		Assert.AreNotEqual(key2.GetHashCode(), key3.GetHashCode());
+		Assert.AreEqual(key1.GetHashCode(), key3.GetHashCode());
+
+		for (int i = 0; i < 100; i++)
+            test[new CollisionKey(0, i)] = i.ToString();
+
+        for (int i = 0; i < 100; i++)
+            Assert.AreEqual(i.ToString(), test[new CollisionKey(0, i)]);
+
+        for (int i = 0; i < 100; i++)
+            Assert.IsTrue(test.Remove(new CollisionKey(0, i)));
+
+        Assert.IsEmpty(test);
+	}
+
+	class KeyValueEquality<TKey, TValue> : IEqualityComparer<KeyValuePair<TKey, TValue>>
     {
         IEqualityComparer<TKey> KeyComparer = EqualityComparer<TKey>.Default;
         IEqualityComparer<TValue> ValueComparer = EqualityComparer<TValue>.Default;
@@ -521,6 +548,27 @@ public class TestLurchTable : TestGenericCollection<LurchTable<int, string>, Key
             return KeyComparer.GetHashCode(obj.Key) ^ ValueComparer.GetHashCode(obj.Value);
         }
     }
+}
+
+public class CollisionKey
+{
+	private readonly int _hash;
+	private readonly int _value;
+	public CollisionKey(int hash, int value)
+	{
+		_hash = hash;
+		_value = value;
+	}
+	public override int GetHashCode()
+	{
+		return _hash + (_value % 2);
+	}
+	public override bool Equals(object obj)
+	{
+		if (obj is CollisionKey other)
+			return _value == other._value;
+		return false;
+	}
 }
 
 [TestClass]
