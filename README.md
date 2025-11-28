@@ -7,9 +7,9 @@ CSharpTest.BPlusTree
 
 ## Background ## 
 
-I first came across this code when I had the same thoughts as CSharpTest http://csharptest.net/482/building-a-database-in-c-part-1/index.html about persisting data from a dictionary in a project. The implementation of b+tree with a IDictionary<TKey, TValue> interface seemed perfect, but the requirements changed, and I didn’t end up using CSharpTest.Net.Collections. Now I have once again stumbled upon a solution that may benefit from this library and I looked at it once again, but since it is unmaintained I wanted to simplify it for my needs. I have also updated it to use new .net APIs that has been released after the original implementation. 
+I first came across this code when I had the same thoughts as CSharpTest http://csharptest.net/482/building-a-database-in-c-part-1/index.html about persisting data from a dictionary in a project. The implementation of b+tree with a IDictionary<TKey, TValue> interface seemed perfect, but the requirements changed, and I didn’t end up using CSharpTest.Net.Collections. Now I have once again stumbled upon a solution that can benefit from this library and I looked at it once again, but since it is unmaintained I needed to simplify it for my needs. I have also updated it to use new .net APIs that has been released after the original implementation. 
 
-I have  ported many of the original tests and one benchmark to prove the new implementation to the point that I now don’t know of any issues.
+I have ported many of the original tests and one benchmark to prove the new implementation to the point that I now don’t know of any issues.
 
 Some of the changes in this fork...
 
