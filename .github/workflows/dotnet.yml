@@ -23,11 +23,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release --collect:"Code Coverage"
-    
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./coverage/*
-        fail_ci_if_error: false
+      run: dotnet test --no-build --verbosity normal --configuration Release
